@@ -8,10 +8,12 @@ import GeminiProcessManager from './lib/gemini-process.js';
 import MessageParser from './lib/message-parser.js';
 import CollaborationDetector from './lib/collaboration-detector.js';
 import FileWatcher from './lib/file-watcher.js';
+import { createLogger } from './lib/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const logger = createLogger('SERVER');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -36,16 +38,19 @@ if (process.env.NODE_ENV === 'production') {
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  logger.info('Client connected', { socketId: socket.id, totalClients: io.engine.clientsCount + 1 });
 
   // Start Gemini process when client connects
   if (!geminiProcess.isRunning) {
+    logger.info('Starting Gemini process for new client');
     geminiProcess.start();
+  } else {
+    logger.debug('Gemini process already running, reusing for client');
   }
 
   // Handle user messages
   socket.on('user_message', (data) => {
-    console.log('User message:', data.message);
+    logger.info('User message received', logger.truncateOutput(data.message, 100));
     
     // Send typing indicator
     socket.emit('typing_indicator', { isTyping: true, speaker: 'Gemini' });
@@ -56,7 +61,7 @@ io.on('connection', (socket) => {
 
   // Handle session reset
   socket.on('reset_session', () => {
-    console.log('Resetting session');
+    logger.info('Session reset requested');
     
     // Reset all processors
     messageParser.reset();
@@ -66,13 +71,16 @@ io.on('connection', (socket) => {
     geminiProcess.restart();
     
     socket.emit('session_reset');
+    logger.debug('Session reset complete');
   });
 
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    const remainingClients = io.engine.clientsCount - 1;
+    logger.info('Client disconnected', { socketId: socket.id, remainingClients });
     
     // If no more clients, kill Gemini process
-    if (io.engine.clientsCount === 0) {
+    if (remainingClients === 0) {
+      logger.info('No more clients, killing Gemini process');
       geminiProcess.kill();
     }
   });
@@ -80,11 +88,12 @@ io.on('connection', (socket) => {
 
 // Gemini process event handlers
 geminiProcess.on('data', (data) => {
-  console.log('Gemini output:', data.substring(0, 100) + '...');
+  logger.debug('Raw Gemini output', logger.truncateOutput(data, 200));
   
   // Parse regular chat messages
   const messageResult = messageParser.parseGeminiOutput(data);
   if (messageResult.hasMessage) {
+    logger.info('Parsed Gemini message', logger.truncateOutput(messageResult.message, 100));
     io.emit('gemini_message', {
       message: messageResult.message,
       timestamp: messageResult.timestamp
@@ -97,7 +106,7 @@ geminiProcess.on('data', (data) => {
   // Detect AI collaboration
   const collabResult = collaborationDetector.detectCollaboration(data);
   if (collabResult.detected) {
-    console.log('AI collaboration detected:', collabResult.command);
+    logger.info('AI collaboration detected', { command: collabResult.command });
     io.emit('collaboration_detected', {
       command: collabResult.command,
       timestamp: collabResult.timestamp
@@ -107,7 +116,7 @@ geminiProcess.on('data', (data) => {
   // Extract Claude responses
   const responseResult = collaborationDetector.extractClaudeResponse(data);
   if (responseResult.hasResponse) {
-    console.log('Claude response extracted');
+    logger.info('Claude response extracted', logger.truncateOutput(responseResult.response, 100));
     io.emit('claude_response', {
       response: responseResult.response,
       timestamp: responseResult.timestamp
@@ -116,17 +125,17 @@ geminiProcess.on('data', (data) => {
 });
 
 geminiProcess.on('error', (error) => {
-  console.error('Gemini process error:', error);
+  logger.error('Gemini process error', { message: error.message, stack: error.stack });
   io.emit('error', { message: 'Gemini process error: ' + error.message });
 });
 
 geminiProcess.on('exit', (exitCode) => {
-  console.log('Gemini process exited with code:', exitCode);
+  logger.warn('Gemini process exited', { exitCode, hasClients: io.engine.clientsCount > 0 });
   io.emit('process_exit', { exitCode });
   
   // Attempt restart if exit was unexpected
   if (exitCode !== 0 && io.engine.clientsCount > 0) {
-    console.log('Attempting to restart Gemini process...');
+    logger.info('Attempting to restart Gemini process after unexpected exit');
     setTimeout(() => {
       geminiProcess.start();
     }, 2000);
@@ -135,17 +144,17 @@ geminiProcess.on('exit', (exitCode) => {
 
 // File watcher event handlers
 fileWatcher.on('spec_file_generated', (data) => {
-  console.log('Spec file generated:', data.filePath);
+  logger.info('Spec file generated', { filePath: data.filePath });
   io.emit('spec_file_generated', data);
 });
 
 fileWatcher.on('spec_file_updated', (data) => {
-  console.log('Spec file updated:', data.filePath);
+  logger.info('Spec file updated', { filePath: data.filePath });
   io.emit('spec_file_updated', data);
 });
 
 fileWatcher.on('error', (error) => {
-  console.error('File watcher error:', error);
+  logger.error('File watcher error', { message: error.message });
 });
 
 // Start file watcher
@@ -153,37 +162,42 @@ fileWatcher.start();
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-  console.log('Shutting down gracefully...');
+  logger.info('Received SIGINT, shutting down gracefully');
   
   geminiProcess.kill();
   fileWatcher.stop();
   server.close(() => {
-    console.log('Server closed');
+    logger.info('Server closed successfully');
     process.exit(0);
   });
 });
 
 process.on('SIGTERM', () => {
-  console.log('Received SIGTERM, shutting down...');
+  logger.info('Received SIGTERM, shutting down');
   
   geminiProcess.kill();
   fileWatcher.stop();
   server.close(() => {
-    console.log('Server closed');
+    logger.info('Server closed successfully');
     process.exit(0);
   });
 });
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`SpecDrafter server running on port ${PORT}`);
-  console.log(`Frontend should be running on http://localhost:3001`);
+  logger.info('SpecDrafter server started', { 
+    port: PORT, 
+    frontend: 'http://localhost:3001',
+    logLevel: process.env.LOG_LEVEL || 'INFO'
+  });
   
   try {
     geminiProcess.validateEnvironment();
-    console.log('Environment validation passed');
+    logger.info('Environment validation passed');
   } catch (error) {
-    console.error('Environment validation failed:', error.message);
-    console.error('Make sure you are running the server from the SpecDrafter directory');
+    logger.error('Environment validation failed', { 
+      message: error.message,
+      hint: 'Make sure you are running the server from the SpecDrafter directory'
+    });
   }
 });
