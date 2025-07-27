@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Message from './Message';
 import TypingIndicator from './TypingIndicator';
 
-function ChatPanel({ messages, setMessages, isTyping, socket }) {
+function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onResetSession }) {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef(null);
 
@@ -54,28 +54,39 @@ function ChatPanel({ messages, setMessages, isTyping, socket }) {
   };
 
   const resetSession = () => {
-    setMessages([]);
     socket?.emit('reset_session');
+    onResetSession();
   };
 
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl flex flex-col h-full">
       <div className="flex justify-between items-center p-4 border-b border-white/10">
-        <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-          💬 Chat with Gemini
-        </h3>
+        <div>
+          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+            💬 Chat with Gemini
+          </h3>
+          {projectData && (
+            <p className="text-sm text-gray-400 mt-1">
+              Project: {projectData.projectName}
+            </p>
+          )}
+        </div>
         <button 
           onClick={resetSession}
           className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg transition-all duration-200 hover:scale-105"
         >
-          Reset Session
+          New Project
         </button>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-gray-400 mt-8">
-            <p>Welcome to SpecDrafter! Start chatting with Gemini to draft your technical specifications.</p>
+            <div className="text-4xl mb-4">🤖</div>
+            <p>Gemini is ready to help draft your specifications.</p>
+            {projectData && (
+              <p className="text-sm mt-2">Your project details have been shared. The conversation will begin shortly.</p>
+            )}
           </div>
         )}
         

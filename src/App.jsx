@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import ChatPanel from './components/ChatPanel';
 import CollaborationPanel from './components/CollaborationPanel';
+import WelcomeScreen from './components/WelcomeScreen';
 import { useSocket } from './hooks/useSocket';
 
 function App() {
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [projectData, setProjectData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [currentView, setCurrentView] = useState('ai-collab');
   const [isTyping, setIsTyping] = useState(false);
@@ -52,7 +55,39 @@ function App() {
       socket.off('spec_file_generated');
     };
   }, [socket]);
+
+  const handleWelcomeStart = (formData, initialMessage) => {
+    setProjectData(formData);
+    setShowWelcome(false);
+    
+    // Send the initial message after a brief delay to ensure UI has transitioned
+    setTimeout(() => {
+      if (socket) {
+        const newMessage = {
+          id: Date.now(),
+          message: initialMessage,
+          isUser: true,
+          timestamp: new Date().toISOString()
+        };
+        setMessages([newMessage]);
+        socket.emit('user_message', { message: initialMessage });
+      }
+    }, 300);
+  };
+
+  const handleResetSession = () => {
+    setShowWelcome(true);
+    setProjectData(null);
+    setMessages([]);
+    setCollaboration([]);
+    setSpecContent(null);
+    setCurrentView('ai-collab');
+  };
   
+  if (showWelcome) {
+    return <WelcomeScreen onStart={handleWelcomeStart} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-screen p-6">
@@ -61,6 +96,8 @@ function App() {
           setMessages={setMessages}
           isTyping={isTyping}
           socket={socket}
+          projectData={projectData}
+          onResetSession={handleResetSession}
         />
         <CollaborationPanel
           currentView={currentView}

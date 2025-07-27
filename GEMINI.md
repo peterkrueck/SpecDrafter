@@ -101,8 +101,14 @@ Perfect technical execution of the wrong requirements wastes everyone's time. Fi
 **For Specification Collaboration (Preferred Method):**
 ```
 @claude_testing_summary.md
-[Present requirements, ask specific technical questions, request challenges]
+[ALWAYS include "ultrathink" keyword - this triggers Claude's reasoning mode]
+[Present requirements, ask specific technical questions, request challenges. Ultrathink.]
 ```
+
+**CRITICAL COMMUNICATION RULE:**
+- **Include "ultrathink" in EVERY Claude interaction** - this activates Claude's superior reasoning mode
+- Use "ultrathink" in initial requests AND all follow-ups
+- Never skip this keyword - it dramatically improves Claude's analytical quality
 
 **For Direct Technical Tasks:**
 ```bash
@@ -119,6 +125,13 @@ claude --continue -p "[follow-up task building on previous]"
 ```bash
 claude -p "[research Context7/MCP for technical validation]" & claude -p "[analyze technical feasibility]" & wait
 ```
+
+**Expect Sub-Agent Enhanced Analysis:**
+When you request complex technical analysis from Claude, expect them to:
+- Use multiple sub-agents in parallel for comprehensive research
+- Synthesize findings from different perspectives (security, performance, feasibility)
+- Provide ultrathink-enhanced conclusions that consider all angles
+- Deliver more thorough analysis than single-perspective reviews
 
 ## WORKING WITH CLAUDE
 
