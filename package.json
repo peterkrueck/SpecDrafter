@@ -1,0 +1,38 @@
+{
+  "name": "specdrafter",
+  "version": "1.0.0",
+  "description": "AI collaboration tool for drafting technical specifications",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"nodemon server.js\" \"vite\"",
+    "start": "npm run dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.js",
+    "frontend": "vite"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "socket.io": "^4.7.0",
+    "node-pty": "^1.0.0",
+    "chokidar": "^3.5.0",
+    "strip-ansi": "^7.1.0",
+    "marked": "^9.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "socket.io-client": "^4.7.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.0",
+    "vite": "^5.0.0",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "concurrently": "^8.2.0",
+    "nodemon": "^3.0.0"
+  },
+  "keywords": ["ai", "collaboration", "specifications", "gemini", "claude"],
+  "author": "",
+  "license": "MIT"
+}
