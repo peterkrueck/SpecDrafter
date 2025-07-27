@@ -19,7 +19,7 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
 
     socket.on('gemini_message', (data) => {
       const newMessage = {
-        id: Date.now(),
+        id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         message: data.message,
         isUser: false,
         timestamp: data.timestamp || new Date().toISOString()
@@ -35,7 +35,7 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
   const sendMessage = () => {
     if (inputValue.trim()) {
       const newMessage = {
-        id: Date.now(),
+        id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         message: inputValue,
         isUser: true,
         timestamp: new Date().toISOString()

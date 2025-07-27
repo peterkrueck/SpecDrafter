@@ -64,7 +64,7 @@ function App() {
     setTimeout(() => {
       if (socket) {
         const newMessage = {
-          id: Date.now(),
+          id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           message: initialMessage,
           isUser: true,
           timestamp: new Date().toISOString()
