@@ -23,7 +23,7 @@ const io = new Server(server, {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3002;
 
 // Initialize managers
 const geminiProcess = new GeminiProcessManager();

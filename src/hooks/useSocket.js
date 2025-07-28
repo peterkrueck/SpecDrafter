@@ -7,7 +7,7 @@ export function useSocket() {
   
   useEffect(() => {
     console.log('[FRONTEND] Initializing socket connection to http://localhost:3000');
-    const newSocket = io('http://localhost:3000');
+    const newSocket = io('http://localhost:3002');
     
     newSocket.on('connect', () => {
       setConnected(true);
