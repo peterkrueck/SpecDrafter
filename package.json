@@ -15,7 +15,6 @@
   "dependencies": {
     "express": "^4.18.0",
     "socket.io": "^4.7.0",
-    "node-pty": "^1.0.0",
     "chokidar": "^3.5.0",
     "strip-ansi": "^7.1.0",
     "marked": "^9.1.0",
