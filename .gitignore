@@ -1,8 +1,9 @@
-# Dependencies
+# Node.js Dependencies
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json.backup
 
 # Production builds
 dist/
@@ -16,11 +17,11 @@ build/
 .env.production.local
 
 # Logs
-logs
+logs/
 *.log
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
@@ -54,3 +55,11 @@ temp/
 
 # Generated specifications (keep structure, ignore content)
 specs/*/
+
+# Node.js specific
+.cache/
+.npm/
+.eslintcache
+
+# Express server temp files
+sessions/
