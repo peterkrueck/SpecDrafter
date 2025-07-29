@@ -52,6 +52,39 @@ This document summarizes the findings from various tests conducted on the `claud
 ### Observations:
 -   **Sequential Execution (without `&`)**: If `claude` commands are executed sequentially without the `&` operator, the shell waits for each command to complete before starting the next. This means tasks are processed one after another, not in parallel.
 
+## 6. Nested Claude CLI Invocations
+
+### Possible:
+-   **Multi-Level Nesting**: Claude instances can successfully invoke other Claude instances using `claude -p`, creating nested execution chains.
+-   **Deep Nesting Support**: Successfully tested up to 4 levels deep (Level 1 → Level 2 → Level 3 → Level 4).
+-   **Context Separation**: Each nested Claude instance maintains independent context and can clearly separate its own input/output from other levels.
+-   **Complex Instruction Chains**: Multi-step instructions can be passed through multiple nesting levels successfully.
+-   **Honest Response Behavior**: Nested Claude instances accurately report their findings and maintain transparency about their capabilities and limitations.
+
+### Security Limitations:
+-   **Maximum Depth Protection**: System security measures prevent excessive nesting depth (5+ levels) to protect against potential command injection patterns.
+-   **Recursive Command Blocking**: Deeply nested command structures with complex escaping are blocked by security controls.
+
+## 7. --Continue Flag in Nested Contexts
+
+### Possible:
+-   **Nested Context Preservation**: The `--continue` flag works successfully within nested Claude CLI invocations.
+-   **Independent Conversation Threads**: Each nested Claude instance maintains its own conversation history separate from its parent instance.
+-   **Multi-Level State Management**: Context can be maintained through multiple levels of nesting, with each level preserving its own conversational state.
+-   **Recursive Self-Reference**: Nested Claude instances can use `--continue` to reference their own previous invocations successfully.
+
+### Test Results:
+-   **Level 2 Context Test**: Successfully maintained context about "Berlin" when asked about population using `--continue`.
+-   **Memory Isolation Test**: Different nested instances maintain separate conversation threads without cross-contamination.
+-   **Self-Reference Test**: Nested Claude correctly remembered "TIGER" from its own previous invocation using `--continue`.
+
 ## Conclusion
 
 The `claude` CLI is a powerful tool capable of sophisticated operations, including maintaining conversational state, integrating with external services (MCP), performing file system manipulations (with proper permissions), and orchestrating sub-agents for complex, parallelized tasks. Its ability to run multiple instances concurrently via background processes further enhances its utility for automated and complex workflows.
+
+**New Capabilities Discovered:**
+- **Nested Invocation**: Claude can successfully invoke other Claude instances up to 4 levels deep, enabling complex multi-level task delegation and processing.
+- **Stateful Nesting**: The `--continue` flag works seamlessly in nested contexts, allowing each level to maintain independent conversation histories while preserving context across invocations.
+- **Security Controls**: Built-in protections prevent abuse through excessive nesting depth while still enabling legitimate use cases.
+
+These findings significantly expand the documented capabilities of the Claude CLI, demonstrating its potential for sophisticated automation workflows involving recursive task delegation and stateful multi-level processing.
