@@ -63,3 +63,6 @@ specs/*/
 
 # Express server temp files
 sessions/
+
+# Claude configuration
+.claude/
