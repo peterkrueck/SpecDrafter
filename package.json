@@ -21,8 +21,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "socket.io": "^4.7.0",
-    "socket.io-client": "^4.7.0",
-    "strip-ansi": "^7.1.0"
+    "socket.io-client": "^4.7.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.0",
@@ -37,8 +36,10 @@
     "ai",
     "collaboration",
     "specifications",
-    "gemini",
-    "claude"
+    "claude",
+    "dual-ai",
+    "requirements",
+    "technical-review"
   ],
   "author": "",
   "license": "MIT"
