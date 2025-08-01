@@ -1,10 +1,16 @@
 import React from 'react';
 
-function TypingIndicator({ speaker = 'Gemini' }) {
+function TypingIndicator({ speaker = 'AI' }) {
+  const isReviewAI = speaker === 'Review AI';
+  
   return (
     <div className="flex justify-start mb-4">
-      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 flex-shrink-0">
-        🔵
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3 flex-shrink-0 ${
+        isReviewAI 
+          ? 'bg-gradient-to-br from-orange-500 to-red-500' 
+          : 'bg-gradient-to-br from-blue-500 to-cyan-500'
+      }`}>
+        {isReviewAI ? '🔴' : '🔵'}
       </div>
       <div className="bg-white/10 border border-white/20 px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm">
         <div className="flex items-center space-x-1">
