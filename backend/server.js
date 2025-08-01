@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import DualProcessOrchestrator from './lib/dual-process-orchestrator.js';
 import FileWatcher from './lib/file-watcher.js';
 import { createLogger } from './lib/logger.js';
+import { getAllModels, getModelById } from './lib/models.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,7 +25,8 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3002;
 
 // Initialize managers
-const orchestrator = new DualProcessOrchestrator();
+// Orchestrator will be initialized with model when client connects
+let orchestrator = null;
 const fileWatcher = new FileWatcher();
 
 // Serve static files in production
@@ -36,22 +38,21 @@ if (process.env.NODE_ENV === 'production') {
 io.on('connection', (socket) => {
   logger.info('Client connected', { socketId: socket.id, totalClients: io.engine.clientsCount + 1 });
 
-  // Start Claude processes when first client connects
-  if (io.engine.clientsCount === 1) {
-    logger.info('Starting Claude processes for first client');
-    orchestrator.startProcesses()
-      .then(() => {
-        logger.info('Claude processes started successfully');
-      })
-      .catch((error) => {
-        logger.error('Failed to start Claude processes', { error: error.message });
-      });
+  // Initialize orchestrator if not already initialized
+  if (!orchestrator) {
+    orchestrator = new DualProcessOrchestrator();
+    setupOrchestratorHandlers();
   }
 
-  // Send current orchestrator status
-  const status = orchestrator.getStatus();
-  logger.info('Sending orchestrator status to client', status);
-  socket.emit('orchestrator_status', status);
+  // Send current orchestrator status and available models
+  if (orchestrator) {
+    const status = orchestrator.getStatus();
+    logger.info('Sending orchestrator status to client', status);
+    socket.emit('orchestrator_status', status);
+  }
+  
+  // Send available models
+  socket.emit('available_models', getAllModels());
 
   // Handle user messages
   socket.on('user_message', async (data) => {
@@ -80,14 +81,57 @@ io.on('connection', (socket) => {
     await orchestrator.triggerReview();
   });
 
-  // Handle manual process start request
-  socket.on('start_processes', async () => {
-    logger.info('Manual process start requested');
+  // Handle manual process start request with optional model
+  socket.on('start_processes', async (data = {}) => {
+    logger.info('Manual process start requested', { model: data.modelId });
+    
     try {
+      // If model specified, update orchestrator
+      if (data.modelId && orchestrator) {
+        const modelConfig = getModelById(data.modelId);
+        if (modelConfig) {
+          // Recreate orchestrator with new model
+          await orchestrator.shutdown();
+          orchestrator = new DualProcessOrchestrator(modelConfig);
+          setupOrchestratorHandlers();
+        }
+      }
+      
       await orchestrator.startProcesses();
     } catch (error) {
       logger.error('Failed to start processes manually', { error: error.message });
+      socket.emit('error', { message: `Failed to start processes: ${error.message}` });
     }
+  });
+  
+  // Handle model change request
+  socket.on('change_model', async (data) => {
+    logger.info('Model change requested', { modelId: data.modelId });
+    
+    if (!orchestrator) {
+      socket.emit('error', { message: 'Orchestrator not initialized' });
+      return;
+    }
+    
+    try {
+      await orchestrator.changeModel(data.modelId);
+      
+      // Send updated status to all clients
+      const status = orchestrator.getStatus();
+      io.emit('orchestrator_status', status);
+      io.emit('model_changed', { 
+        model: status.currentModel,
+        success: true 
+      });
+    } catch (error) {
+      logger.error('Failed to change model', { error: error.message });
+      socket.emit('error', { message: `Failed to change model: ${error.message}` });
+    }
+  });
+  
+  // Handle get available models request
+  socket.on('get_available_models', () => {
+    socket.emit('available_models', getAllModels());
   });
 
   // Handle session reset
@@ -95,7 +139,9 @@ io.on('connection', (socket) => {
     logger.info('Session reset requested');
     
     // Reset orchestrator
-    await orchestrator.resetProcesses();
+    if (orchestrator) {
+      await orchestrator.resetProcesses();
+    }
     
     socket.emit('session_reset');
     logger.debug('Session reset complete');
@@ -108,62 +154,73 @@ io.on('connection', (socket) => {
     // If no more clients, shutdown orchestrator
     if (remainingClients === 0) {
       logger.info('No more clients, shutting down orchestrator');
-      orchestrator.shutdown();
+      if (orchestrator) {
+        orchestrator.shutdown();
+      }
     }
   });
 });
 
-// Orchestrator event handlers
-orchestrator.on('requirements_message', (data) => {
-  logger.info('Requirements message', logger.truncateOutput(data.content, 100));
-  io.emit('requirements_message', data);
+// Function to setup orchestrator event handlers
+function setupOrchestratorHandlers() {
+  if (!orchestrator) return;
   
-  // Hide typing indicator
-  io.emit('typing_indicator', { isTyping: false, speaker: 'Requirements AI' });
-});
-
-orchestrator.on('review_message', (data) => {
-  logger.info('Review message', logger.truncateOutput(data.content, 100));
-  io.emit('review_message', data);
-  
-  // Hide typing indicator
-  io.emit('typing_indicator', { isTyping: false, speaker: 'Review AI' });
-});
-
-orchestrator.on('collaboration_detected', (data) => {
-  logger.info('Collaboration detected', data);
-  io.emit('collaboration_detected', data);
-});
-
-orchestrator.on('active_process_changed', (data) => {
-  logger.info('Active process changed', data);
-  io.emit('active_process_changed', data);
-});
-
-orchestrator.on('processes_started', () => {
-  logger.info('Orchestrator emitted processes_started event');
-  io.emit('processes_ready');
-  
-  // Send updated status to all clients
-  const status = orchestrator.getStatus();
-  logger.info('Broadcasting updated orchestrator status', status);
-  io.emit('orchestrator_status', status);
-});
-
-orchestrator.on('error', (error) => {
-  logger.error('Orchestrator error', { 
-    process: error.process, 
-    message: error.error.message 
+  orchestrator.on('requirements_message', (data) => {
+    logger.info('Requirements message', logger.truncateOutput(data.content, 100));
+    io.emit('requirements_message', data);
+    
+    // Hide typing indicator
+    io.emit('typing_indicator', { isTyping: false, speaker: 'Requirements AI' });
   });
-  io.emit('error', { 
-    message: `${error.process} process error: ${error.error.message}` 
-  });
-});
 
-orchestrator.on('process_exit', (exitInfo) => {
-  logger.warn('Process exited', exitInfo);
-  io.emit('process_exit', exitInfo);
-});
+  orchestrator.on('review_message', (data) => {
+    logger.info('Review message', logger.truncateOutput(data.content, 100));
+    io.emit('review_message', data);
+    
+    // Hide typing indicator
+    io.emit('typing_indicator', { isTyping: false, speaker: 'Review AI' });
+  });
+
+  orchestrator.on('collaboration_detected', (data) => {
+    logger.info('Collaboration detected', data);
+    io.emit('collaboration_detected', data);
+  });
+
+  orchestrator.on('active_process_changed', (data) => {
+    logger.info('Active process changed', data);
+    io.emit('active_process_changed', data);
+  });
+
+  orchestrator.on('processes_started', () => {
+    logger.info('Orchestrator emitted processes_started event');
+    io.emit('processes_ready');
+    
+    // Send updated status to all clients
+    const status = orchestrator.getStatus();
+    logger.info('Broadcasting updated orchestrator status', status);
+    io.emit('orchestrator_status', status);
+  });
+
+  orchestrator.on('error', (error) => {
+    logger.error('Orchestrator error', { 
+      process: error.process, 
+      message: error.error.message 
+    });
+    io.emit('error', { 
+      message: `${error.process} process error: ${error.error.message}` 
+    });
+  });
+
+  orchestrator.on('process_exit', (exitInfo) => {
+    logger.warn('Process exited', exitInfo);
+    io.emit('process_exit', exitInfo);
+  });
+
+  orchestrator.on('model_changed', (data) => {
+    logger.info('Model changed', data);
+    io.emit('model_changed', data);
+  });
+}
 
 // File watcher event handlers
 fileWatcher.on('spec_file_generated', (data) => {
@@ -187,7 +244,9 @@ fileWatcher.start();
 process.on('SIGINT', async () => {
   logger.info('Received SIGINT, shutting down gracefully');
   
-  await orchestrator.shutdown();
+  if (orchestrator) {
+    await orchestrator.shutdown();
+  }
   fileWatcher.stop();
   server.close(() => {
     logger.info('Server closed successfully');
@@ -198,7 +257,9 @@ process.on('SIGINT', async () => {
 process.on('SIGTERM', async () => {
   logger.info('Received SIGTERM, shutting down');
   
-  await orchestrator.shutdown();
+  if (orchestrator) {
+    await orchestrator.shutdown();
+  }
   fileWatcher.stop();
   server.close(() => {
     logger.info('Server closed successfully');

@@ -12,6 +12,8 @@ function App() {
   const [typingState, setTypingState] = useState({ isTyping: false, speaker: '' });
   const [collaboration, setCollaboration] = useState([]);
   const [specContent, setSpecContent] = useState(null);
+  const [currentModel, setCurrentModel] = useState(null);
+  const [availableModels, setAvailableModels] = useState([]);
   
   const { socket, connected } = useSocket();
 
@@ -20,6 +22,21 @@ function App() {
 
     socket.on('orchestrator_status', (status) => {
       console.log('[FRONTEND] Orchestrator status:', status);
+      if (status.currentModel) {
+        setCurrentModel(status.currentModel);
+      }
+    });
+    
+    socket.on('available_models', (models) => {
+      console.log('[FRONTEND] Available models:', models);
+      setAvailableModels(models);
+    });
+    
+    socket.on('model_changed', (data) => {
+      console.log('[FRONTEND] Model changed:', data);
+      if (data.model) {
+        setCurrentModel(data.model);
+      }
     });
 
     socket.on('processes_ready', () => {
@@ -63,6 +80,8 @@ function App() {
       socket.off('collaboration_detected');
       socket.off('claude_response');
       socket.off('spec_file_generated');
+      socket.off('available_models');
+      socket.off('model_changed');
     };
   }, [socket]);
 
@@ -71,6 +90,7 @@ function App() {
     setShowWelcome(false);
     
     // Send the initial message after a brief delay to ensure UI has transitioned
+    // Processes are already started by WelcomeScreen on mount
     setTimeout(() => {
       if (socket) {
         const newMessage = {
@@ -95,7 +115,7 @@ function App() {
   };
   
   if (showWelcome) {
-    return <WelcomeScreen onStart={handleWelcomeStart} />;
+    return <WelcomeScreen onStart={handleWelcomeStart} socket={socket} />;
   }
 
   return (
@@ -108,6 +128,8 @@ function App() {
           socket={socket}
           projectData={projectData}
           onResetSession={handleResetSession}
+          currentModel={currentModel}
+          availableModels={availableModels}
         />
         <CollaborationPanel
           currentView={currentView}

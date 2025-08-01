@@ -1,9 +1,10 @@
 import { query } from '@anthropic-ai/claude-code';
 import { EventEmitter } from 'events';
 import { createLogger } from './logger.js';
+import { getDefaultModel, getModelByCommand } from './models.js';
 
 class ClaudeSDKManager extends EventEmitter {
-  constructor(role, workspacePath) {
+  constructor(role, workspacePath, modelConfig = null) {
     super();
     this.role = role; // 'requirements' or 'review'
     this.workspacePath = workspacePath;
@@ -12,6 +13,12 @@ class ClaudeSDKManager extends EventEmitter {
     this.hasSession = false;
     this.isRunning = false;
     this.logger = createLogger(`CLAUDE-${role.toUpperCase()}`);
+    
+    // Model configuration
+    const defaultModel = getDefaultModel();
+    this.currentModel = modelConfig?.id || defaultModel.id;
+    this.fallbackModel = 'claude-3-5-sonnet-20241022'; // Keep existing fallback
+    this.logger.info('Initialized with model', { model: this.currentModel });
   }
 
   async spawn(prompt, usesContinue = false, systemPrompt = null) {
@@ -30,8 +37,8 @@ class ClaudeSDKManager extends EventEmitter {
     try {
       const options = {
         cwd: this.workspacePath,
-        model: 'claude-3-5-sonnet-20241022',
-        fallbackModel: 'claude-3-sonnet-20240229',
+        model: this.currentModel,
+        fallbackModel: this.fallbackModel,
         permissionMode: 'bypassPermissions', // For automated process
         allowedTools: ['Read', 'Write', 'Edit', 'MultiEdit', 'Bash', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebSearch', 'Task'],
         maxTurns: 10,
@@ -214,13 +221,54 @@ class ClaudeSDKManager extends EventEmitter {
     }, 1000);
   }
 
+  async changeModel(modelId) {
+    if (this.isRunning && this.hasSession) {
+      // If we have an active session, try to change model using /model command
+      const modelConfig = getModelByCommand(modelId) || { id: modelId };
+      const modelCommand = modelConfig.command;
+      
+      if (modelCommand) {
+        this.logger.info('Attempting to change model via command', { 
+          currentModel: this.currentModel,
+          newModel: modelId,
+          command: `/model ${modelCommand}`
+        });
+        
+        // Send model change command
+        await this.spawn(`/model ${modelCommand}`, true);
+        this.currentModel = modelConfig.id || modelId;
+        
+        this.emit('model_changed', {
+          model: this.currentModel,
+          role: this.role
+        });
+      } else {
+        this.logger.warn('Model command not found, model will change on next session', { modelId });
+        this.currentModel = modelId;
+      }
+    } else {
+      // No active session, just update the model for next spawn
+      this.logger.info('Model updated for next session', { 
+        currentModel: this.currentModel,
+        newModel: modelId 
+      });
+      this.currentModel = modelId;
+      
+      this.emit('model_changed', {
+        model: this.currentModel,
+        role: this.role
+      });
+    }
+  }
+
   getStatus() {
     return {
       role: this.role,
       isRunning: this.isRunning,
       hasSession: this.hasSession,
       sessionId: this.sessionId,
-      workspacePath: this.workspacePath
+      workspacePath: this.workspacePath,
+      currentModel: this.currentModel
     };
   }
 }

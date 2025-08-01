@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import ClaudeSDKManager from './claude-sdk-manager.js';
 import { createLogger } from './logger.js';
+import { getDefaultModel, getModelById } from './models.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -8,16 +9,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 class DualProcessOrchestrator extends EventEmitter {
-  constructor() {
+  constructor(modelConfig = null) {
     super();
     this.logger = createLogger('ORCHESTRATOR');
+    
+    // Model configuration - both processes use the same model
+    this.currentModelConfig = modelConfig || getDefaultModel();
+    this.logger.info('Initializing orchestrator with model', { 
+      model: this.currentModelConfig.id 
+    });
     
     // Initialize both Claude processes
     const requirementsPath = path.join(__dirname, '../workspaces/requirements-discovery');
     const reviewPath = path.join(__dirname, '../workspaces/technical-review');
     
-    this.requirementsProcess = new ClaudeSDKManager('requirements', requirementsPath);
-    this.reviewProcess = new ClaudeSDKManager('review', reviewPath);
+    this.requirementsProcess = new ClaudeSDKManager('requirements', requirementsPath, this.currentModelConfig);
+    this.reviewProcess = new ClaudeSDKManager('review', reviewPath, this.currentModelConfig);
     
     // Current state
     this.activeProcess = 'requirements';
@@ -284,11 +291,36 @@ Please revise the specification based on this feedback.`;
     }, 2000);
   }
 
+  async changeModel(modelId) {
+    this.logger.info('Changing model for both processes', { modelId });
+    
+    // Update model configuration
+    const newModelConfig = getModelById(modelId);
+    if (!newModelConfig) {
+      this.logger.error('Invalid model ID', { modelId });
+      throw new Error(`Invalid model ID: ${modelId}`);
+    }
+    
+    this.currentModelConfig = newModelConfig;
+    
+    // Change model for both processes
+    await Promise.all([
+      this.requirementsProcess.changeModel(modelId),
+      this.reviewProcess.changeModel(modelId)
+    ]);
+    
+    this.emit('model_changed', {
+      model: this.currentModelConfig,
+      activeProcess: this.activeProcess
+    });
+  }
+
   getStatus() {
     return {
       activeProcess: this.activeProcess,
       collaborationState: this.collaborationState,
       hasSpecDraft: !!this.currentSpecDraft,
+      currentModel: this.currentModelConfig,
       processes: {
         requirements: this.requirementsProcess.getStatus(),
         review: this.reviewProcess.getStatus()
