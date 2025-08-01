@@ -24,7 +24,7 @@ class FileWatcher {
   }
 
   start() {
-    const specsPath = path.join(process.cwd(), 'specs/**/*.md');
+    const specsPath = path.join(process.cwd(), '../specs/**/*.md');
     
     console.log('Starting file watcher for specs directory...');
     

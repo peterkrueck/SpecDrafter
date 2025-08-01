@@ -49,17 +49,17 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
 ### Key Architectural Components
 
 #### 1. Dual-Claude Process Management
-- **ClaudeSDKManager** (`lib/claude-sdk-manager.js`): Manages individual Claude instances using the SDK
-- **DualProcessOrchestrator** (`lib/dual-process-orchestrator.js`): Coordinates between two Claude processes
+- **ClaudeSDKManager** (`backend/lib/claude-sdk-manager.js`): Manages individual Claude instances using the SDK
+- **DualProcessOrchestrator** (`backend/lib/dual-process-orchestrator.js`): Coordinates between two Claude processes
 - **Workspace-based Architecture**: Each Claude instance has its own workspace with custom CLAUDE.md instructions
 
 #### 2. Claude Instance Roles
-- **Requirements Discovery** (workspace: `/workspaces/requirements-discovery/`)
+- **Requirements Discovery** (workspace: `backend/workspaces/requirements-discovery/`)
   - Uses GEMINI.md instructions (via CLAUDE.md in its workspace)
   - Focuses on user interaction and requirements gathering
   - Identifies when specifications are ready for review
   
-- **Technical Review** (workspace: `/workspaces/technical-review/`)
+- **Technical Review** (workspace: `backend/workspaces/technical-review/`)
   - Uses CLAUDE2.md instructions (via CLAUDE.md in its workspace)
   - Provides technical analysis and feasibility review
   - Challenges assumptions and suggests improvements
@@ -119,22 +119,48 @@ App.jsx
 - Backend Socket.IO server: http://localhost:3002
 - Frontend proxies Socket.IO requests to backend
 
-### Workspace Structure
+### Project Structure
 ```
-workspaces/
-├── requirements-discovery/
-│   ├── CLAUDE.md (contains GEMINI.md instructions)
-│   └── shared/ (symlink to shared-context)
-├── technical-review/
-│   ├── CLAUDE.md (contains CLAUDE2.md instructions)
-│   └── shared/ (symlink to shared-context)
-└── shared-context/ (shared files between workspaces)
+SpecDrafter/
+├── backend/                    # Server-side code
+│   ├── server.js              # Express/Socket.IO server
+│   ├── lib/                   # Backend libraries
+│   │   ├── claude-sdk-manager.js
+│   │   ├── dual-process-orchestrator.js
+│   │   ├── file-watcher.js
+│   │   ├── logger.js
+│   │   └── claude-message-parser.js
+│   ├── shared-context/        # Shared context between Claude instances
+│   └── workspaces/            # Claude workspaces
+│       ├── requirements-discovery/
+│       │   ├── CLAUDE.md (contains GEMINI.md instructions)
+│       │   └── shared/ (symlink to ../shared-context)
+│       └── technical-review/
+│           ├── CLAUDE.md (contains CLAUDE2.md instructions)
+│           └── shared/ (symlink to ../shared-context)
+├── frontend/                  # Client-side code
+│   ├── index.html            # Main HTML file
+│   ├── src/                  # React source code
+│   │   ├── App.jsx
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   └── styles/
+│   ├── public/               # Static assets
+│   ├── vite.config.js       # Vite configuration
+│   ├── tailwind.config.js   # Tailwind configuration
+│   └── postcss.config.js    # PostCSS configuration
+├── specs/                    # Generated specifications (user deliverables)
+├── dist/                     # Production build output
+├── package.json             # Project dependencies and scripts
+└── CLAUDE.md                # This file
 ```
 
 ### File System Considerations
 - Each workspace has its own CLAUDE.md for custom behavior
-- The `specs/` directory is auto-created if missing
+- The `specs/` directory at project root is auto-created if missing
 - Generated specifications follow pattern: `specs/[ProjectName]/spec.md`
+- Backend and frontend code are cleanly separated into their respective directories
+- The `backend/shared-context/` directory is symlinked into both workspaces for sharing files
 
 ### Real-time Communication
 - Socket.IO handles all real-time messaging

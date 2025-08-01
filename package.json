@@ -5,12 +5,12 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"nodemon server.js\" \"vite\"",
+    "dev": "concurrently \"nodemon backend/server.js\" \"cd frontend && vite\"",
     "start": "npm run dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "server": "node server.js",
-    "frontend": "vite"
+    "build": "cd frontend && vite build",
+    "preview": "cd frontend && vite preview",
+    "server": "node backend/server.js",
+    "frontend": "cd frontend && vite"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.64",
