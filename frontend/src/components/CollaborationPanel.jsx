@@ -4,8 +4,8 @@ import SpecView from './SpecView';
 
 function CollaborationPanel({ currentView, setCurrentView, collaboration, specContent }) {
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl flex flex-col h-full">
-      <div className="flex p-4 border-b border-white/10 gap-2">
+    <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl flex flex-col h-full overflow-hidden">
+      <div className="flex p-4 border-b border-white/10 gap-2 flex-shrink-0">
         <button 
           onClick={() => setCurrentView('ai-collab')}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${

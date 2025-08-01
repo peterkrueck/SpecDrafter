@@ -38,9 +38,9 @@ function SpecView({ content }) {
         </button>
       </div>
       
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 p-4 overflow-y-auto scrollbar-collab smooth-scroll">
         <div 
-          className="prose prose-invert prose-sm max-w-none"
+          className="prose prose-invert prose-sm max-w-none animate-fade-in"
           dangerouslySetInnerHTML={{ __html: content.html }}
         />
       </div>

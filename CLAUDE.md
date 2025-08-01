@@ -71,6 +71,8 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
   - `switch_process`: Switch active AI
   - `trigger_review`: Initiate specification review
   - `reset_session`: Clear and restart
+  - `change_model`: Switch between Claude 4 models (Opus/Sonnet)
+  - `get_available_models`: Request list of available models
   
 - **Server → Client**: 
   - `requirements_message`: Messages from Requirements AI
@@ -80,6 +82,8 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
   - `spec_file_generated`: New specification created
   - `orchestrator_status`: Current system state
   - `processes_ready`: Claude instances initialized
+  - `available_models`: List of available Claude models
+  - `model_changed`: Confirmation of model change
 
 #### 4. React Component Hierarchy
 ```
@@ -129,7 +133,8 @@ SpecDrafter/
 │   │   ├── dual-process-orchestrator.js
 │   │   ├── file-watcher.js
 │   │   ├── logger.js
-│   │   └── claude-message-parser.js
+│   │   ├── claude-message-parser.js
+│   │   └── models.js          # Claude model configuration
 │   ├── shared-context/        # Shared context between Claude instances
 │   └── workspaces/            # Claude workspaces
 │       ├── requirements-discovery/
@@ -179,7 +184,10 @@ SpecDrafter/
 ### SDK Configuration
 - Uses `@anthropic-ai/claude-code` package
 - Permission mode: `bypassPermissions` for automated operation
-- Models: claude-3-5-sonnet (primary), claude-3-sonnet (fallback)
+- Models: 
+  - **Claude 4 Opus** (`claude-opus-4-20250514`): Best for complex reasoning and detailed analysis
+  - **Claude 4 Sonnet** (`claude-sonnet-4-20250514`): Balanced performance and speed (default)
+- Model selection: Dynamic switching between models via UI
 - Max turns: 10 per conversation segment
 
 ### Session Management
