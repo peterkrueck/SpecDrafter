@@ -26,5 +26,41 @@ module.exports = {
       }
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }) {
+      const scrollUtilities = {
+        '.scrollbar-thin': {
+          scrollbarWidth: 'thin',
+        },
+        '.scrollbar-none': {
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+        },
+        '.scroll-shadows': {
+          position: 'relative',
+          '&::before, &::after': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            height: '30px',
+            pointerEvents: 'none',
+            zIndex: 10,
+            transition: 'opacity 0.3s ease',
+          },
+          '&::before': {
+            top: 0,
+            background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, transparent 100%)',
+          },
+          '&::after': {
+            bottom: 0,
+            background: 'linear-gradient(to top, rgba(0, 0, 0, 0.1) 0%, transparent 100%)',
+          },
+        },
+      };
+      addUtilities(scrollUtilities);
+    },
+  ],
 };

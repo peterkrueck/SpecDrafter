@@ -4,14 +4,105 @@
 
 @layer base {
   html {
-    @apply h-full;
+    @apply h-full overflow-hidden;
   }
   body {
-    @apply h-full bg-slate-900;
+    @apply h-full bg-slate-900 overflow-hidden;
     background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%);
     background-attachment: fixed;
   }
   #root {
-    @apply h-full;
+    @apply h-full overflow-hidden;
+  }
+}
+
+/* Custom Scrollbar Styles */
+@layer utilities {
+  /* Chat Panel Scrollbar (Blue Theme) */
+  .scrollbar-chat::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-chat::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  .scrollbar-chat::-webkit-scrollbar-thumb {
+    @apply bg-blue-500/20 rounded-full transition-colors duration-200;
+  }
+  
+  .scrollbar-chat::-webkit-scrollbar-thumb:hover {
+    @apply bg-blue-500/40;
+  }
+  
+  .scrollbar-chat::-webkit-scrollbar-thumb:active {
+    @apply bg-blue-500/60;
+  }
+  
+  /* Collaboration Panel Scrollbar (Purple Theme) */
+  .scrollbar-collab::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-collab::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  .scrollbar-collab::-webkit-scrollbar-thumb {
+    @apply bg-purple-500/20 rounded-full transition-colors duration-200;
+  }
+  
+  .scrollbar-collab::-webkit-scrollbar-thumb:hover {
+    @apply bg-purple-500/40;
+  }
+  
+  .scrollbar-collab::-webkit-scrollbar-thumb:active {
+    @apply bg-purple-500/60;
+  }
+  
+  /* Firefox Scrollbar Support */
+  .scrollbar-chat {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(59, 130, 246, 0.2) transparent;
+  }
+  
+  .scrollbar-collab {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.2) transparent;
+  }
+  
+  /* Smooth Scrolling */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+  
+  /* Scroll Shadow Effects */
+  .scroll-shadow-top::before,
+  .scroll-shadow-bottom::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 30px;
+    pointer-events: none;
+    z-index: 10;
+  }
+  
+  .scroll-shadow-top::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, transparent 100%);
+    opacity: var(--scroll-shadow-top, 0);
+    transition: opacity 0.3s ease;
+  }
+  
+  .scroll-shadow-bottom::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.1) 0%, transparent 100%);
+    opacity: var(--scroll-shadow-bottom, 0);
+    transition: opacity 0.3s ease;
   }
 }

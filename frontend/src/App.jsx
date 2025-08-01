@@ -119,8 +119,8 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-screen p-6">
+    <div className="h-screen overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full p-6">
         <ChatPanel 
           messages={messages}
           setMessages={setMessages}
@@ -140,7 +140,7 @@ function App() {
       </div>
       
       {!connected && (
-        <div className="fixed bottom-4 right-4 bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-2 rounded-lg backdrop-blur-sm">
+        <div className="fixed bottom-4 right-4 bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-2 rounded-lg backdrop-blur-sm z-50">
           Disconnected from server
         </div>
       )}
