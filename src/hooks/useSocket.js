@@ -6,7 +6,7 @@ export function useSocket() {
   const [connected, setConnected] = useState(false);
   
   useEffect(() => {
-    console.log('[FRONTEND] Initializing socket connection to http://localhost:3000');
+    console.log('[FRONTEND] Initializing socket connection to http://localhost:3002');
     const newSocket = io('http://localhost:3002');
     
     newSocket.on('connect', () => {
@@ -24,21 +24,26 @@ export function useSocket() {
     });
 
     // Log key server events
-    newSocket.on('gemini_message', (data) => {
-      console.log('[FRONTEND] 📨 Gemini message received', { 
-        messageLength: data.message?.length || 0,
+    newSocket.on('requirements_message', (data) => {
+      console.log('[FRONTEND] 📨 Requirements AI message received', { 
+        messageLength: data.content?.length || 0,
+        timestamp: data.timestamp 
+      });
+    });
+
+    newSocket.on('review_message', (data) => {
+      console.log('[FRONTEND] 🔷 Review AI message received', { 
+        messageLength: data.content?.length || 0,
         timestamp: data.timestamp 
       });
     });
 
     newSocket.on('collaboration_detected', (data) => {
-      console.log('[FRONTEND] 🤝 AI collaboration detected', { command: data.command });
+      console.log('[FRONTEND] 🤝 AI collaboration detected', data);
     });
 
-    newSocket.on('claude_response', (data) => {
-      console.log('[FRONTEND] 🔷 Claude response received', { 
-        responseLength: data.response?.length || 0 
-      });
+    newSocket.on('processes_ready', () => {
+      console.log('[FRONTEND] ✨ Claude processes ready');
     });
 
     newSocket.on('typing_indicator', (data) => {

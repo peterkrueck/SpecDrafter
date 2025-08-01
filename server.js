@@ -4,9 +4,8 @@ import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import GeminiProcessManager from './lib/gemini-process.js';
+import DualProcessOrchestrator from './lib/dual-process-orchestrator.js';
 import MessageParser from './lib/message-parser.js';
-import CollaborationDetector from './lib/collaboration-detector.js';
 import FileWatcher from './lib/file-watcher.js';
 import { createLogger } from './lib/logger.js';
 
@@ -26,9 +25,8 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3002;
 
 // Initialize managers
-const geminiProcess = new GeminiProcessManager();
+const orchestrator = new DualProcessOrchestrator();
 const messageParser = new MessageParser();
-const collaborationDetector = new CollaborationDetector();
 const fileWatcher = new FileWatcher();
 
 // Serve static files in production
@@ -40,35 +38,69 @@ if (process.env.NODE_ENV === 'production') {
 io.on('connection', (socket) => {
   logger.info('Client connected', { socketId: socket.id, totalClients: io.engine.clientsCount + 1 });
 
-  // Start Gemini process when client connects
-  if (!geminiProcess.isRunning) {
-    logger.info('Starting Gemini process for new client');
-    geminiProcess.start();
-  } else {
-    logger.debug('Gemini process already running, reusing for client');
+  // Start Claude processes when first client connects
+  if (io.engine.clientsCount === 1) {
+    logger.info('Starting Claude processes for first client');
+    orchestrator.startProcesses()
+      .then(() => {
+        logger.info('Claude processes started successfully');
+      })
+      .catch((error) => {
+        logger.error('Failed to start Claude processes', { error: error.message });
+      });
   }
 
+  // Send current orchestrator status
+  const status = orchestrator.getStatus();
+  logger.info('Sending orchestrator status to client', status);
+  socket.emit('orchestrator_status', status);
+
   // Handle user messages
-  socket.on('user_message', (data) => {
+  socket.on('user_message', async (data) => {
     logger.info('User message received', logger.truncateOutput(data.message, 100));
     
     // Send typing indicator
-    socket.emit('typing_indicator', { isTyping: true, speaker: 'Gemini' });
+    const activeProcess = orchestrator.activeProcess;
+    socket.emit('typing_indicator', { 
+      isTyping: true, 
+      speaker: activeProcess === 'requirements' ? 'Requirements AI' : 'Review AI' 
+    });
     
-    // Send message to Gemini process
-    geminiProcess.write(data.message + '\n');
+    // Route message through orchestrator
+    await orchestrator.routeUserMessage(data.message);
+  });
+
+  // Handle process switching
+  socket.on('switch_process', (data) => {
+    logger.info('Process switch requested', { targetProcess: data.process });
+    orchestrator.switchActiveProcess(data.process);
+  });
+
+  // Handle collaboration trigger
+  socket.on('trigger_review', async () => {
+    logger.info('Review trigger requested');
+    await orchestrator.triggerReview();
+  });
+
+  // Handle manual process start request
+  socket.on('start_processes', async () => {
+    logger.info('Manual process start requested');
+    try {
+      await orchestrator.startProcesses();
+    } catch (error) {
+      logger.error('Failed to start processes manually', { error: error.message });
+    }
   });
 
   // Handle session reset
-  socket.on('reset_session', () => {
+  socket.on('reset_session', async () => {
     logger.info('Session reset requested');
     
     // Reset all processors
     messageParser.reset();
-    collaborationDetector.reset();
     
-    // Restart Gemini process
-    geminiProcess.restart();
+    // Reset orchestrator
+    await orchestrator.resetProcesses();
     
     socket.emit('session_reset');
     logger.debug('Session reset complete');
@@ -78,68 +110,64 @@ io.on('connection', (socket) => {
     const remainingClients = io.engine.clientsCount - 1;
     logger.info('Client disconnected', { socketId: socket.id, remainingClients });
     
-    // If no more clients, kill Gemini process
+    // If no more clients, shutdown orchestrator
     if (remainingClients === 0) {
-      logger.info('No more clients, killing Gemini process');
-      geminiProcess.kill();
+      logger.info('No more clients, shutting down orchestrator');
+      orchestrator.shutdown();
     }
   });
 });
 
-// Gemini process event handlers
-geminiProcess.on('data', (data) => {
-  logger.debug('Raw Gemini output', logger.truncateOutput(data, 200));
+// Orchestrator event handlers
+orchestrator.on('requirements_message', (data) => {
+  logger.info('Requirements message', logger.truncateOutput(data.content, 100));
+  io.emit('requirements_message', data);
   
-  // Parse regular chat messages
-  const messageResult = messageParser.parseGeminiOutput(data);
-  if (messageResult.hasMessage) {
-    logger.info('Parsed Gemini message', logger.truncateOutput(messageResult.message, 100));
-    io.emit('gemini_message', {
-      message: messageResult.message,
-      timestamp: messageResult.timestamp
-    });
-    
-    // Hide typing indicator
-    io.emit('typing_indicator', { isTyping: false, speaker: 'Gemini' });
-  }
-  
-  // Detect AI collaboration
-  const collabResult = collaborationDetector.detectCollaboration(data);
-  if (collabResult.detected) {
-    logger.info('AI collaboration detected', { command: collabResult.command });
-    io.emit('collaboration_detected', {
-      command: collabResult.command,
-      timestamp: collabResult.timestamp
-    });
-  }
-  
-  // Extract Claude responses
-  const responseResult = collaborationDetector.extractClaudeResponse(data);
-  if (responseResult.hasResponse) {
-    logger.info('Claude response extracted', logger.truncateOutput(responseResult.response, 100));
-    io.emit('claude_response', {
-      response: responseResult.response,
-      timestamp: responseResult.timestamp
-    });
-  }
+  // Hide typing indicator
+  io.emit('typing_indicator', { isTyping: false, speaker: 'Requirements AI' });
 });
 
-geminiProcess.on('error', (error) => {
-  logger.error('Gemini process error', { message: error.message, stack: error.stack });
-  io.emit('error', { message: 'Gemini process error: ' + error.message });
+orchestrator.on('review_message', (data) => {
+  logger.info('Review message', logger.truncateOutput(data.content, 100));
+  io.emit('review_message', data);
+  
+  // Hide typing indicator
+  io.emit('typing_indicator', { isTyping: false, speaker: 'Review AI' });
 });
 
-geminiProcess.on('exit', (exitCode) => {
-  logger.warn('Gemini process exited', { exitCode, hasClients: io.engine.clientsCount > 0 });
-  io.emit('process_exit', { exitCode });
+orchestrator.on('collaboration_detected', (data) => {
+  logger.info('Collaboration detected', data);
+  io.emit('collaboration_detected', data);
+});
+
+orchestrator.on('active_process_changed', (data) => {
+  logger.info('Active process changed', data);
+  io.emit('active_process_changed', data);
+});
+
+orchestrator.on('processes_started', () => {
+  logger.info('Orchestrator emitted processes_started event');
+  io.emit('processes_ready');
   
-  // Attempt restart if exit was unexpected
-  if (exitCode !== 0 && io.engine.clientsCount > 0) {
-    logger.info('Attempting to restart Gemini process after unexpected exit');
-    setTimeout(() => {
-      geminiProcess.start();
-    }, 2000);
-  }
+  // Send updated status to all clients
+  const status = orchestrator.getStatus();
+  logger.info('Broadcasting updated orchestrator status', status);
+  io.emit('orchestrator_status', status);
+});
+
+orchestrator.on('error', (error) => {
+  logger.error('Orchestrator error', { 
+    process: error.process, 
+    message: error.error.message 
+  });
+  io.emit('error', { 
+    message: `${error.process} process error: ${error.error.message}` 
+  });
+});
+
+orchestrator.on('process_exit', (exitInfo) => {
+  logger.warn('Process exited', exitInfo);
+  io.emit('process_exit', exitInfo);
 });
 
 // File watcher event handlers
@@ -161,10 +189,10 @@ fileWatcher.on('error', (error) => {
 fileWatcher.start();
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('Received SIGINT, shutting down gracefully');
   
-  geminiProcess.kill();
+  await orchestrator.shutdown();
   fileWatcher.stop();
   server.close(() => {
     logger.info('Server closed successfully');
@@ -172,10 +200,10 @@ process.on('SIGINT', () => {
   });
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('Received SIGTERM, shutting down');
   
-  geminiProcess.kill();
+  await orchestrator.shutdown();
   fileWatcher.stop();
   server.close(() => {
     logger.info('Server closed successfully');
@@ -191,13 +219,9 @@ server.listen(PORT, () => {
     logLevel: process.env.LOG_LEVEL || 'INFO'
   });
   
-  try {
-    geminiProcess.validateEnvironment();
-    logger.info('Environment validation passed');
-  } catch (error) {
-    logger.error('Environment validation failed', { 
-      message: error.message,
-      hint: 'Make sure you are running the server from the SpecDrafter directory'
-    });
-  }
+  logger.info('Dual-Claude architecture ready');
+  logger.info('Workspaces configured:', {
+    requirements: 'workspaces/requirements-discovery/',
+    review: 'workspaces/technical-review/'
+  });
 });
