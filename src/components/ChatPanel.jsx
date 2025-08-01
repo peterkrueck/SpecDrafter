@@ -17,18 +17,33 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('gemini_message', (data) => {
+    // Handle messages from Requirements AI
+    socket.on('requirements_message', (data) => {
       const newMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        message: data.message,
+        message: data.content,
         isUser: false,
+        speaker: 'Requirements AI',
+        timestamp: data.timestamp || new Date().toISOString()
+      };
+      setMessages(prev => [...prev, newMessage]);
+    });
+
+    // Handle messages from Review AI
+    socket.on('review_message', (data) => {
+      const newMessage = {
+        id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        message: data.content,
+        isUser: false,
+        speaker: 'Review AI',
         timestamp: data.timestamp || new Date().toISOString()
       };
       setMessages(prev => [...prev, newMessage]);
     });
 
     return () => {
-      socket.off('gemini_message');
+      socket.off('requirements_message');
+      socket.off('review_message');
     };
   }, [socket, setMessages]);
 
@@ -63,7 +78,7 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
       <div className="flex justify-between items-center p-4 border-b border-white/10">
         <div>
           <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-            💬 Chat with Gemini
+            💬 AI Collaboration
           </h3>
           {projectData && (
             <p className="text-sm text-gray-400 mt-1">
@@ -82,8 +97,8 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-gray-400 mt-8">
-            <div className="text-4xl mb-4">🤖</div>
-            <p>Gemini is ready to help draft your specifications.</p>
+            <div className="text-4xl mb-4">🤝</div>
+            <p>AI-to-AI collaboration will appear here when Gemini calls Claude for technical analysis.</p>
             {projectData && (
               <p className="text-sm mt-2">Your project details have been shared. The conversation will begin shortly.</p>
             )}
@@ -96,6 +111,7 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
             message={msg.message}
             isUser={msg.isUser}
             timestamp={msg.timestamp}
+            speaker={msg.speaker}
           />
         ))}
         

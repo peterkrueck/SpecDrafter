@@ -18,6 +18,14 @@ function App() {
   useEffect(() => {
     if (!socket) return;
 
+    socket.on('orchestrator_status', (status) => {
+      console.log('[FRONTEND] Orchestrator status:', status);
+    });
+
+    socket.on('processes_ready', () => {
+      console.log('[FRONTEND] Claude processes are ready!');
+    });
+
     socket.on('typing_indicator', (data) => {
       setIsTyping(data.isTyping);
     });
@@ -49,6 +57,8 @@ function App() {
     });
 
     return () => {
+      socket.off('orchestrator_status');
+      socket.off('processes_ready');
       socket.off('typing_indicator');
       socket.off('collaboration_detected');
       socket.off('claude_response');

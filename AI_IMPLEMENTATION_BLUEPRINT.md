@@ -61,7 +61,7 @@ class ClaudeProcessManager {
   async spawn(prompt, usesContinue = false) {
     const args = ['-p', prompt];
     if (usesContinue && this.hasSession) {
-      args.unshift('--continue');
+      args.splice(0, 0, '--continue'); // Add --continue at the beginning
     }
     
     this.process = spawn('claude', args, {
