@@ -9,7 +9,7 @@ function App() {
   const [projectData, setProjectData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [currentView, setCurrentView] = useState('ai-collab');
-  const [isTyping, setIsTyping] = useState(false);
+  const [typingState, setTypingState] = useState({ isTyping: false, speaker: '' });
   const [collaboration, setCollaboration] = useState([]);
   const [specContent, setSpecContent] = useState(null);
   
@@ -27,7 +27,7 @@ function App() {
     });
 
     socket.on('typing_indicator', (data) => {
-      setIsTyping(data.isTyping);
+      setTypingState({ isTyping: data.isTyping, speaker: data.speaker || '' });
     });
 
     socket.on('collaboration_detected', (data) => {
@@ -104,7 +104,7 @@ function App() {
         <ChatPanel 
           messages={messages}
           setMessages={setMessages}
-          isTyping={isTyping}
+          typingState={typingState}
           socket={socket}
           projectData={projectData}
           onResetSession={handleResetSession}

@@ -184,7 +184,7 @@ I want to create this project. Please help me draft comprehensive specifications
         </div>
 
         <div className="mt-8 text-center text-xs text-gray-400">
-          <p>SpecDrafter uses AI collaboration between Gemini and Claude to create comprehensive technical specifications</p>
+          <p>SpecDrafter uses dual-AI collaboration to create comprehensive technical specifications</p>
         </div>
       </div>
     </div>

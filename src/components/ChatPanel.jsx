@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import Message from './Message';
 import TypingIndicator from './TypingIndicator';
 
-function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onResetSession }) {
+function ChatPanel({ messages, setMessages, typingState, socket, projectData, onResetSession }) {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -12,7 +13,7 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [messages, typingState]);
 
   useEffect(() => {
     if (!socket) return;
@@ -58,6 +59,10 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
       setMessages(prev => [...prev, newMessage]);
       socket?.emit('user_message', { message: inputValue });
       setInputValue('');
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = '40px';
+      }
     }
   };
 
@@ -66,6 +71,20 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
       e.preventDefault();
       sendMessage();
     }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const handleTextareaChange = (e) => {
+    setInputValue(e.target.value);
+    // Auto-resize textarea
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; // Max ~4 rows
   };
 
   const resetSession = () => {
@@ -98,7 +117,7 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
         {messages.length === 0 && (
           <div className="text-center text-gray-400 mt-8">
             <div className="text-4xl mb-4">🤝</div>
-            <p>AI-to-AI collaboration will appear here when Gemini calls Claude for technical analysis.</p>
+            <p>Your conversation with the AI team will appear here.</p>
             {projectData && (
               <p className="text-sm mt-2">Your project details have been shared. The conversation will begin shortly.</p>
             )}
@@ -115,19 +134,22 @@ function ChatPanel({ messages, setMessages, isTyping, socket, projectData, onRes
           />
         ))}
         
-        {isTyping && <TypingIndicator />}
+        {typingState.isTyping && <TypingIndicator speaker={typingState.speaker} />}
         <div ref={messagesEndRef} />
       </div>
       
       <div className="p-4 border-t border-white/10">
         <div className="flex gap-2">
           <textarea
+            ref={textareaRef}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={handleTextareaChange}
             onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Type your message here..."
-            className="flex-1 bg-white/5 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="flex-1 bg-white/5 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden"
             rows={1}
+            style={{ minHeight: '40px' }}
           />
           <button
             onClick={sendMessage}
