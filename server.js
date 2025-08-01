@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import DualProcessOrchestrator from './lib/dual-process-orchestrator.js';
-import MessageParser from './lib/message-parser.js';
 import FileWatcher from './lib/file-watcher.js';
 import { createLogger } from './lib/logger.js';
 
@@ -26,7 +25,6 @@ const PORT = process.env.PORT || 3002;
 
 // Initialize managers
 const orchestrator = new DualProcessOrchestrator();
-const messageParser = new MessageParser();
 const fileWatcher = new FileWatcher();
 
 // Serve static files in production
@@ -95,9 +93,6 @@ io.on('connection', (socket) => {
   // Handle session reset
   socket.on('reset_session', async () => {
     logger.info('Session reset requested');
-    
-    // Reset all processors
-    messageParser.reset();
     
     // Reset orchestrator
     await orchestrator.resetProcesses();
