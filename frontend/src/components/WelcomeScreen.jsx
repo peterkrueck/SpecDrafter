@@ -1,12 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAllModels, getDefaultModel, MODEL_STORAGE_KEY } from '../config/models.js';
 
-function WelcomeScreen({ onStart }) {
+function WelcomeScreen({ onStart, socket }) {
+  const models = getAllModels();
+  const defaultModel = getDefaultModel();
+  
   const [formData, setFormData] = useState({
     projectName: '',
     skillLevel: '',
     softwareType: '',
-    description: ''
+    description: '',
+    modelId: ''
   });
+  
+  // Load saved model preference and start processes on mount
+  useEffect(() => {
+    const savedModelId = localStorage.getItem(MODEL_STORAGE_KEY);
+    const initialModelId = savedModelId && models.find(m => m.id === savedModelId) ? savedModelId : defaultModel.id;
+    setFormData(prev => ({ ...prev, modelId: initialModelId }));
+    
+    // Start processes with the initial model when socket is ready
+    if (socket) {
+      socket.emit('start_processes', { modelId: initialModelId });
+    }
+  }, [socket]);
 
   const [errors, setErrors] = useState({});
 
@@ -28,6 +45,12 @@ function WelcomeScreen({ onStart }) {
     // Clear error when user starts typing/selecting
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
+    }
+    
+    // If model changed, update it immediately
+    if (field === 'modelId' && socket) {
+      socket.emit('change_model', { modelId: value });
+      localStorage.setItem(MODEL_STORAGE_KEY, value);
     }
   };
 
@@ -169,6 +192,27 @@ I want to create this project. Please help me draft comprehensive specifications
             {errors.description && (
               <p className="text-red-400 text-sm mt-1">{errors.description}</p>
             )}
+          </div>
+
+          {/* Model Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              AI Model Selection
+            </label>
+            <select
+              value={formData.modelId}
+              onChange={(e) => handleInputChange('modelId', e.target.value)}
+              className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+            >
+              {models.map((model) => (
+                <option key={model.id} value={model.id} className="bg-gray-900">
+                  {model.name} - {model.description}
+                </option>
+              ))}
+            </select>
+            <p className="text-gray-400 text-xs mt-1">
+              Both AIs will use this model. You can change it later during the session.
+            </p>
           </div>
 
           {/* Start Button */}
