@@ -71,13 +71,26 @@ function App() {
       setCurrentView('spec');
     });
 
+    socket.on('spec_file_updated', (data) => {
+      console.log('📝 Spec file updated received:', data.filePath);
+      setSpecContent({
+        html: data.html,
+        raw: data.raw,
+        filePath: data.filePath,
+        fileName: data.fileName,
+        lastUpdated: new Date().toISOString() // Force React to detect state change
+      });
+      // Don't auto-switch view for updates, user might be reading collaboration panel
+    });
+
     return () => {
       socket.off('orchestrator_status');
       socket.off('processes_ready');
       socket.off('typing_indicator');
       socket.off('collaboration_detected');
-      socket.off('claude_response');
+      socket.off('ai_collaboration_message');
       socket.off('spec_file_generated');
+      socket.off('spec_file_updated');
       socket.off('available_models');
       socket.off('model_changed');
     };

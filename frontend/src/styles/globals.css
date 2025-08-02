@@ -106,3 +106,85 @@
     transition: opacity 0.3s ease;
   }
 }
+
+/* Spec Content Styling */
+@layer components {
+  .spec-content {
+    @apply text-gray-200;
+  }
+  
+  /* Headers */
+  .spec-content h1 {
+    @apply text-2xl font-bold text-white mb-5 pb-2 border-b border-purple-500/30;
+  }
+  
+  .spec-content h2 {
+    @apply text-xl font-semibold text-purple-300 mt-6 mb-3;
+  }
+  
+  .spec-content h3 {
+    @apply text-lg font-semibold text-purple-200 mt-5 mb-2;
+  }
+  
+  .spec-content h4 {
+    @apply text-base font-medium text-gray-300 mt-4 mb-2;
+  }
+  
+  /* Paragraphs and Lists */
+  .spec-content p {
+    @apply text-gray-300 leading-relaxed mb-3 text-sm;
+  }
+  
+  .spec-content ul {
+    @apply space-y-1.5 mb-3;
+  }
+  
+  .spec-content li {
+    @apply text-gray-300 ml-4 text-sm;
+  }
+  
+  .spec-content li::marker {
+    @apply text-purple-400;
+  }
+  
+  /* Code Blocks */
+  .spec-content pre {
+    @apply bg-black/40 border border-purple-500/20 rounded-lg p-4 mb-4 overflow-x-auto;
+  }
+  
+  .spec-content code {
+    @apply text-purple-300 bg-purple-500/10 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  
+  .spec-content pre code {
+    @apply bg-transparent p-0 text-gray-300;
+  }
+  
+  /* Links */
+  .spec-content a {
+    @apply text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors;
+  }
+  
+  /* Tables */
+  .spec-content table {
+    @apply w-full mb-4 border-collapse;
+  }
+  
+  .spec-content th {
+    @apply bg-purple-500/10 text-purple-300 font-semibold text-left p-3 border border-purple-500/20;
+  }
+  
+  .spec-content td {
+    @apply text-gray-300 p-3 border border-purple-500/10;
+  }
+  
+  /* Blockquotes */
+  .spec-content blockquote {
+    @apply border-l-4 border-purple-500/50 pl-4 italic text-gray-400 my-4;
+  }
+  
+  /* Strong/Bold */
+  .spec-content strong {
+    @apply text-white font-semibold;
+  }
+}
