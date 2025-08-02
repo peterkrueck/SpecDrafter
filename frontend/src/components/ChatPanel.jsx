@@ -6,6 +6,7 @@ import { MODEL_STORAGE_KEY } from '../config/models.js';
 function ChatPanel({ messages, setMessages, typingState, socket, projectData, onResetSession, currentModel, availableModels }) {
   const [inputValue, setInputValue] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isGeneratingSpec, setIsGeneratingSpec] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -42,6 +43,9 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, on
         timestamp: data.timestamp || new Date().toISOString()
       };
       setMessages(prev => [...prev, newMessage]);
+      
+      // Reset generating state when we receive a response
+      setIsGeneratingSpec(false);
     });
 
     // Handle messages from Review AI
@@ -54,6 +58,9 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, on
         timestamp: data.timestamp || new Date().toISOString()
       };
       setMessages(prev => [...prev, newMessage]);
+      
+      // Reset generating state when we receive a response
+      setIsGeneratingSpec(false);
     });
 
     return () => {
@@ -111,6 +118,30 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, on
       socket.emit('change_model', { modelId });
       localStorage.setItem(MODEL_STORAGE_KEY, modelId);
     }
+  };
+
+  // Logic to determine when Generate & Review button should be enabled
+  const canGenerateSpec = socket?.connected && 
+    !typingState.isTyping && 
+    messages.length > 0 && // Show after any conversation starts
+    !isGeneratingSpec &&
+    projectData; // Project data must exist
+
+  const handleGenerateSpec = () => {
+    if (!canGenerateSpec) return;
+    
+    setIsGeneratingSpec(true);
+    
+    // Get project name from projectData
+    const projectName = projectData?.projectName || 'UnknownProject';
+    
+    // Send the predefined message to Discovery AI
+    const message = `Write the complete technical specification to the markdown file at /Users/peterkruck/repos/SpecDrafter/specs/${projectName}/spec.md. Focus on implementation details, technical architecture, data models, API endpoints, component structure, and integration points. Avoid timelines, budgets, or unnecessary fluff - concentrate only on the technical aspects of how to build it. After writing, ask @review: to check the file for any missing technical details, implementation gaps, or architectural improvements needed.`;
+    
+    socket.emit('user_message', { message });
+    
+    // Reset loading state after a delay
+    setTimeout(() => setIsGeneratingSpec(false), 3000);
   };
 
   return (
@@ -211,6 +242,31 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, on
           >
             Send
           </button>
+          {canGenerateSpec && (
+            <button 
+              onClick={handleGenerateSpec}
+              disabled={!canGenerateSpec}
+              className="px-4 py-2 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              title="Generate and review specification"
+            >
+              {isGeneratingSpec ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="hidden sm:inline">Generating...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="hidden sm:inline">Generate Spec</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
       
