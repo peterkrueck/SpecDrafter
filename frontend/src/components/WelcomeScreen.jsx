@@ -13,17 +13,12 @@ function WelcomeScreen({ onStart, socket }) {
     modelId: ''
   });
   
-  // Load saved model preference and start processes on mount
+  // Load saved model preference on mount
   useEffect(() => {
     const savedModelId = localStorage.getItem(MODEL_STORAGE_KEY);
     const initialModelId = savedModelId && models.find(m => m.id === savedModelId) ? savedModelId : defaultModel.id;
     setFormData(prev => ({ ...prev, modelId: initialModelId }));
-    
-    // Start processes with the initial model when socket is ready
-    if (socket) {
-      socket.emit('start_processes', { modelId: initialModelId });
-    }
-  }, [socket]);
+  }, []);
 
   const [errors, setErrors] = useState({});
 

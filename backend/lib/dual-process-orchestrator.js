@@ -156,8 +156,8 @@ class DualProcessOrchestrator extends EventEmitter {
     }
   }
 
-  async startProcesses() {
-    this.logger.info('🚀 startProcesses() called');
+  async startProcesses(initialMessage = null) {
+    this.logger.info('🚀 startProcesses() called', { hasInitialMessage: !!initialMessage });
     
     // Log workspace paths for debugging
     const discoveryPath = path.join(__dirname, '../workspaces/requirements-discovery');
@@ -169,11 +169,14 @@ class DualProcessOrchestrator extends EventEmitter {
     this.logger.info(`  Review workspace exists: ${fs.existsSync(reviewPath)}`);
     
     try {
-      // Requirements process uses the GEMINI.md instructions via CLAUDE.md in its workspace
-      // Just send an initial greeting to establish the session
-      const discoveryPrompt = `Hello! I'm ready to help discover requirements for a new project. Please tell me what you'd like to build.`;
+      // If initial message provided, use it as the first prompt
+      // Otherwise, send a generic greeting (for backward compatibility)
+      const discoveryPrompt = initialMessage || 
+        `Hello! I'm ready to help discover requirements for a new project. Please tell me what you'd like to build.`;
       
-      this.logger.info('🤖 Spawning discovery process...');
+      this.logger.info('🤖 Spawning discovery process...', { 
+        usingInitialMessage: !!initialMessage 
+      });
       await this.discoveryProcess.spawn(discoveryPrompt, false);
       this.logger.info('✅ Discovery process spawned successfully');
 

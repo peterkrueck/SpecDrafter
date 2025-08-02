@@ -100,10 +100,15 @@ function App() {
     setProjectData(formData);
     setShowWelcome(false);
     
-    // Send the initial message after a brief delay to ensure UI has transitioned
-    // Processes are already started by WelcomeScreen on mount
+    // Start processes and send the initial message after a brief delay to ensure UI has transitioned
     setTimeout(() => {
       if (socket) {
+        // Start Discovery AI with the user's project details as the first message
+        socket.emit('start_processes', { 
+          modelId: formData.modelId,
+          initialMessage: initialMessage 
+        });
+        
         const newMessage = {
           id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           message: initialMessage,
@@ -111,7 +116,6 @@ function App() {
           timestamp: new Date().toISOString()
         };
         setMessages([newMessage]);
-        socket.emit('user_message', { message: initialMessage });
       }
     }, 300);
   };
