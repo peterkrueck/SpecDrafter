@@ -26,7 +26,8 @@ function CollaborationView({ collaboration }) {
       {collaboration.length === 0 ? (
         <div className="text-center text-gray-400 mt-8">
           <div className="text-4xl mb-4">🤖</div>
-          <p>AI-to-AI collaboration details will appear here when the AIs work together.</p>
+          <p>AI collaboration messages will appear here.</p>
+          <p className="text-sm mt-2">Review AI starts automatically when Discovery AI needs technical analysis.</p>
         </div>
       ) : (
         <div className="space-y-4">
