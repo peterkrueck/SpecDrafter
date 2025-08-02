@@ -94,7 +94,8 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
 App.jsx
 ├── ChatPanel.jsx (left panel)
 │   ├── Message.jsx (with speaker identification)
-│   └── TypingIndicator.jsx
+│   ├── TypingIndicator.jsx
+│   └── Generate & Review Spec Button (triggers automated workflow)
 └── CollaborationPanel.jsx (right panel)
     ├── CollaborationView.jsx
     └── SpecView.jsx
@@ -137,13 +138,39 @@ The system implements autonomous AI-to-AI communication using special markers:
 - All AI-to-AI communication is logged and displayed in collaboration tab
 
 ### Specification Generation Flow
+
+#### Automatic Workflow (User-Triggered via Button)
+1. **User Initiation**: User clicks "Generate & Review Spec" button in chat panel
+2. **Prompt Injection**: System sends predefined technical-focused prompt to Discovery AI
+3. **Specification Writing**: Discovery AI creates technical spec at `/Users/peterkruck/repos/SpecDrafter/specs/[ProjectName]/spec.md`
+4. **Automatic Review**: Discovery AI immediately sends `@review:` message to Review AI
+5. **Technical Analysis**: Review AI reads spec file and provides implementation feedback
+6. **Iterative Refinement**: AIs collaborate via `@discovery:` and `@review:` markers
+7. **Real-time Display**: File watcher detects changes and updates SpecView automatically
+
+#### Manual Workflow (Conversation-Based)
 1. **Discovery Phase**: Discovery AI gathers project details from user
 2. **Draft Detection**: When draft specification is detected, orchestrator notifies frontend
-3. **AI-to-AI Review**: Discovery AI automatically sends `@review:` message with specification
+3. **AI-to-AI Review**: Discovery AI sends `@review:` message with specification
 4. **Technical Feedback**: Review AI responds with `@discovery:` feedback and analysis
 5. **Autonomous Iteration**: AIs continue collaborating using markers until consensus
 6. **File Generation**: Specifications saved to `specs/[ProjectName]/spec.md`
 7. **UI Display**: File watcher detects and displays final specs in UI
+
+#### Generated Specification Format
+The system generates technical-focused specifications emphasizing:
+- Implementation architecture and patterns
+- Data models and schemas
+- API endpoints and contracts
+- Component structure and hierarchy
+- Integration points and dependencies
+- Security considerations
+- Performance requirements
+
+Explicitly avoids:
+- Project timelines
+- Budget information
+- Non-technical content
 
 ### File Watcher System
 The file watcher monitors the `specs/` directory for markdown files:
@@ -223,6 +250,8 @@ SpecDrafter/
 - Generated specifications follow pattern: `specs/[ProjectName]/spec.md`
 - Backend and frontend code are cleanly separated into their respective directories
 - The `backend/shared-context/` directory is symlinked into both workspaces for sharing files
+- Both Discovery and Review AIs have explicit knowledge of spec file locations
+- Review AI can directly access spec files for iterative improvements
 
 ### Working Directory and Path Context
 **Critical for File Operations**:
@@ -280,6 +309,8 @@ SpecDrafter/
 4. Consider impact on AI-to-AI communication protocol
 5. Test with both Claude instances active and autonomous collaboration
 6. Ensure CollaborationView properly displays new AI interactions
+7. For user-facing features, consider adding UI controls in ChatPanel
+8. Update both AI CLAUDE.md files if the feature affects their behavior
 
 ### Debugging
 - Check browser console for frontend logs
