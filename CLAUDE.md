@@ -69,7 +69,7 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
 #### 3. Socket.IO Event Architecture
 - **Client → Server**: 
   - `user_message`: User chat messages
-  - `start_processes`: Manual process initialization
+  - `start_processes`: Initialize Discovery AI with optional `initialMessage` parameter (sent when user submits welcome form)
   - `switch_process`: Switch active AI (Discovery only - cannot switch to Review)
   - `trigger_review`: Initiate specification review
   - `reset_session`: Clear and restart
@@ -101,6 +101,13 @@ App.jsx
 ```
 
 ### Message Flow
+
+**Initialization Flow:**
+1. User fills welcome form with project details
+2. On submit, frontend emits `start_processes` with user's project info as `initialMessage`
+3. Server starts Discovery AI using project details as first prompt
+4. Discovery AI's first response directly addresses the user's specific project
+5. Session continues with contextual understanding from the start
 
 **User-to-AI Communication:**
 1. User sends message via ChatPanel

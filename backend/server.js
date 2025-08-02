@@ -81,9 +81,12 @@ io.on('connection', (socket) => {
     await orchestrator.triggerReview();
   });
 
-  // Handle manual process start request with optional model
+  // Handle manual process start request with optional model and initial message
   socket.on('start_processes', async (data = {}) => {
-    logger.info('Manual process start requested', { model: data.modelId });
+    logger.info('Manual process start requested', { 
+      model: data.modelId,
+      hasInitialMessage: !!data.initialMessage 
+    });
     
     try {
       // If model specified, update orchestrator
@@ -97,7 +100,13 @@ io.on('connection', (socket) => {
         }
       }
       
-      await orchestrator.startProcesses();
+      // Start processes with optional initial message
+      await orchestrator.startProcesses(data.initialMessage);
+      
+      // If initial message provided, route it as the first user message
+      if (data.initialMessage) {
+        await orchestrator.routeUserMessage(data.initialMessage);
+      }
     } catch (error) {
       logger.error('Failed to start processes manually', { error: error.message });
       socket.emit('error', { message: `Failed to start processes: ${error.message}` });
