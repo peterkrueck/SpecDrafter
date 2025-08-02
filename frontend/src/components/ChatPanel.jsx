@@ -32,13 +32,13 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, on
   useEffect(() => {
     if (!socket) return;
 
-    // Handle messages from Requirements AI
-    socket.on('requirements_message', (data) => {
+    // Handle messages from Discovery AI
+    socket.on('discovery_message', (data) => {
       const newMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         message: data.content,
         isUser: false,
-        speaker: 'Requirements AI',
+        speaker: 'Discovery AI',
         timestamp: data.timestamp || new Date().toISOString()
       };
       setMessages(prev => [...prev, newMessage]);
@@ -57,7 +57,7 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, on
     });
 
     return () => {
-      socket.off('requirements_message');
+      socket.off('discovery_message');
       socket.off('review_message');
     };
   }, [socket, setMessages]);

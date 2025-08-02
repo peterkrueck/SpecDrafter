@@ -6,7 +6,7 @@ import { getDefaultModel, getModelByCommand } from './models.js';
 class ClaudeSDKManager extends EventEmitter {
   constructor(role, workspacePath, modelConfig = null) {
     super();
-    this.role = role; // 'requirements' or 'review'
+    this.role = role; // 'discovery' or 'review'
     this.workspacePath = workspacePath;
     this.currentQuery = null;
     this.sessionId = null;

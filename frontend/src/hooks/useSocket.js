@@ -24,8 +24,8 @@ export function useSocket() {
     });
 
     // Log key server events
-    newSocket.on('requirements_message', (data) => {
-      console.log('[FRONTEND] 📨 Requirements AI message received', { 
+    newSocket.on('discovery_message', (data) => {
+      console.log('[FRONTEND] 📨 Discovery AI message received', { 
         messageLength: data.content?.length || 0,
         timestamp: data.timestamp 
       });

@@ -165,12 +165,12 @@ io.on('connection', (socket) => {
 function setupOrchestratorHandlers() {
   if (!orchestrator) return;
   
-  orchestrator.on('requirements_message', (data) => {
-    logger.info('Requirements message', logger.truncateOutput(data.content, 100));
-    io.emit('requirements_message', data);
+  orchestrator.on('discovery_message', (data) => {
+    logger.info('Discovery message', logger.truncateOutput(data.content, 100));
+    io.emit('discovery_message', data);
     
     // Hide typing indicator
-    io.emit('typing_indicator', { isTyping: false, speaker: 'Requirements AI' });
+    io.emit('typing_indicator', { isTyping: false, speaker: 'Discovery AI' });
   });
 
   orchestrator.on('review_message', (data) => {
@@ -219,6 +219,11 @@ function setupOrchestratorHandlers() {
   orchestrator.on('model_changed', (data) => {
     logger.info('Model changed', data);
     io.emit('model_changed', data);
+  });
+  
+  orchestrator.on('ai_collaboration_message', (data) => {
+    logger.info('AI-to-AI collaboration message', { from: data.from, to: data.to });
+    io.emit('ai_collaboration_message', data);
   });
 }
 
