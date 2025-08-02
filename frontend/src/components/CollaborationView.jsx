@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import TypingIndicator from './TypingIndicator';
 
-function CollaborationView({ collaboration }) {
+function CollaborationView({ collaboration, typingState }) {
   const collaborationEndRef = useRef(null);
   
   // Convert AI collaboration messages to a chat-like format
@@ -65,6 +66,13 @@ function CollaborationView({ collaboration }) {
               </div>
             </div>
           ))}
+          
+          {/* Show typing indicator during AI collaboration */}
+          {typingState && typingState.isTyping && 
+           (typingState.speaker === 'Discovery AI' || typingState.speaker === 'Review AI') && (
+            <TypingIndicator speaker={typingState.speaker} />
+          )}
+          
           <div ref={collaborationEndRef} />
         </div>
       )}
