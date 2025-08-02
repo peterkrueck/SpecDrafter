@@ -3,7 +3,7 @@ import Message from './Message';
 import TypingIndicator from './TypingIndicator';
 import { MODEL_STORAGE_KEY } from '../config/models.js';
 
-function ChatPanel({ messages, setMessages, typingState, socket, projectData, onResetSession, currentModel, availableModels }) {
+function ChatPanel({ messages, setMessages, typingState, socket, projectData, projectInfo, onResetSession, currentModel, availableModels }) {
   const [inputValue, setInputValue] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isGeneratingSpec, setIsGeneratingSpec] = useState(false);
@@ -112,18 +112,19 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, on
     !typingState.isTyping && 
     messages.length > 0 && // Show after any conversation starts
     !isGeneratingSpec &&
-    projectData; // Project data must exist
+    projectData && // Project data must exist
+    projectInfo; // Project info with paths must be available
 
   const handleGenerateSpec = () => {
-    if (!canGenerateSpec) return;
+    if (!canGenerateSpec || !projectInfo) return;
     
     setIsGeneratingSpec(true);
     
     // Get project name from projectData
     const projectName = projectData?.projectName || 'UnknownProject';
     
-    // Send the predefined message to Discovery AI
-    const message = `Write the complete technical specification to the markdown file at /Users/peterkruck/repos/SpecDrafter/specs/${projectName}/spec.md. Focus on implementation details, technical architecture, data models, API endpoints, component structure, and integration points. Avoid timelines, budgets, or unnecessary fluff - concentrate only on the technical aspects of how to build it. After writing, ask @review: to check the file for any missing technical details, implementation gaps, or architectural improvements needed.`;
+    // Send the predefined message to Discovery AI with dynamic path
+    const message = `Write the complete technical specification to the markdown file at ${projectInfo.specsDir}/${projectName}/spec.md. Focus on implementation details, technical architecture, data models, API endpoints, component structure, and integration points. Avoid timelines, budgets, or unnecessary fluff - concentrate only on the technical aspects of how to build it. After writing, ask @review: to check the file for any missing technical details, implementation gaps, or architectural improvements needed.`;
     
     socket.emit('user_message', { message });
     

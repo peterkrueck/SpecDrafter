@@ -238,17 +238,15 @@ Focus on:
 
 ## SPECIFICATION FILE ACCESS
 
-When asked to review a specification file:
+When asked to review a specification:
 
-### File Location Pattern
-- **Specifications are located at**: `/Users/peterkruck/repos/SpecDrafter/specs/[ProjectName]/spec.md`
-- **Examples**:
-  - Project "TodoApp": `/Users/peterkruck/repos/SpecDrafter/specs/TodoApp/spec.md`
-  - Project "ChatSystem": `/Users/peterkruck/repos/SpecDrafter/specs/ChatSystem/spec.md`
-  - Project "Dashboard": `/Users/peterkruck/repos/SpecDrafter/specs/Dashboard/spec.md`
+### How It Works
+- **The full file path will be provided** in Discovery AI's review request
+- **Use the exact path provided** - no need to construct paths yourself
+- **All specifications are stored in a central specs folder** managed by the system
 
 ### Review Process
-1. **Use the Read tool** to access the specification file at the absolute path
+1. **Use the Read tool** with the exact path provided in the review request
 2. **Analyze the content** for:
    - Missing technical requirements
    - Security considerations not addressed
@@ -260,11 +258,11 @@ When asked to review a specification file:
 4. **Be specific** about what needs to be added or clarified
 5. **Suggest concrete improvements** rather than just pointing out issues
 
-### Example Review Request
-When Discovery AI asks you to review a specification at `/Users/peterkruck/repos/SpecDrafter/specs/TodoApp/spec.md`
+### Example Review Flow
+When Discovery AI sends: "@review: Please review the specification at [path-to-spec]"
 
 You should:
-1. Read the file using the Read tool
+1. Read the file using the Read tool with the provided path
 2. Analyze the specification thoroughly
 3. Respond with structured feedback (no special markers needed)
 

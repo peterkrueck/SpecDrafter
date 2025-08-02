@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SpecDrafter is an AI collaboration tool that facilitates real-time specification drafting through dual-Claude architecture. It provides a browser-based interface where two Claude instances work together - one focused on requirements discovery and one on technical review - to create comprehensive technical specifications.
 
+**Note on Paths**: All file paths in this documentation use placeholders like `[project-root]` which are dynamically resolved based on where the project is cloned. The system automatically handles path resolution for different installations.
+
 ## Common Development Commands
 
 ### Development
@@ -148,7 +150,7 @@ The system implements autonomous AI-to-AI communication:
 #### Automatic Workflow (User-Triggered via Button)
 1. **User Initiation**: User clicks "Generate & Review Spec" button in chat panel
 2. **Prompt Injection**: System sends predefined technical-focused prompt to Discovery AI
-3. **Specification Writing**: Discovery AI creates technical spec at `/Users/peterkruck/repos/SpecDrafter/specs/[ProjectName]/spec.md`
+3. **Specification Writing**: Discovery AI creates technical spec at `[project-root]/specs/[ProjectName]/spec.md`
 4. **Automatic Review**: Discovery AI immediately sends `@review:` message to Review AI
 5. **Technical Analysis**: Review AI reads spec file and provides implementation feedback
 6. **Iterative Refinement**: Discovery uses `@review:`, Review responses auto-route back
@@ -261,10 +263,10 @@ SpecDrafter/
 
 ### Working Directory and Path Context
 **Critical for File Operations**:
-- **Server runs from**: Project root (`/Users/peterkruck/repos/SpecDrafter`)
+- **Server runs from**: Project root (where the project is cloned)
 - **Discovery AI workspace**: `backend/workspaces/requirements-discovery/`
 - **File watcher monitors**: `specs/**/*.md` relative to project root
-- **Discovery AI MUST use absolute paths**: `/Users/peterkruck/repos/SpecDrafter/specs/[ProjectName]/spec.md`
+- **Discovery AI receives full paths**: The system provides complete paths in messages
 
 **Why Absolute Paths Matter**:
 - Discovery AI's working directory is deep in the workspace hierarchy
@@ -332,7 +334,7 @@ SpecDrafter/
 - If AI-to-AI communication fails: Check marker parsing in handleAIToAICommunication
 - If spec files don't appear: 
   - Check file watcher is monitoring correct path (should be `specs/**/*.md` from project root)
-  - Verify Discovery AI uses absolute paths (`/Users/peterkruck/repos/SpecDrafter/specs/[ProjectName]/spec.md`)
+  - Verify Discovery AI uses the full paths provided in messages
   - Check server logs for file watcher events
 - If spec updates don't show: Ensure both `spec_file_generated` and `spec_file_updated` handlers exist in frontend
 
