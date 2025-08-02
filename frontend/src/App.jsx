@@ -15,6 +15,7 @@ function App() {
   const [specContent, setSpecContent] = useState(null);
   const [currentModel, setCurrentModel] = useState(null);
   const [availableModels, setAvailableModels] = useState([]);
+  const [projectInfo, setProjectInfo] = useState(null);
   
   const { socket, connected } = useSocket();
 
@@ -31,6 +32,11 @@ function App() {
     socket.on('available_models', (models) => {
       console.log('[FRONTEND] Available models:', models);
       setAvailableModels(models);
+    });
+    
+    socket.on('project_info', (info) => {
+      console.log('[FRONTEND] Project info:', info);
+      setProjectInfo(info);
     });
     
     socket.on('model_changed', (data) => {
@@ -98,6 +104,7 @@ function App() {
       socket.off('spec_file_generated');
       socket.off('spec_file_updated');
       socket.off('available_models');
+      socket.off('project_info');
       socket.off('model_changed');
     };
   }, [socket]);
@@ -148,6 +155,7 @@ function App() {
           typingState={typingState}
           socket={socket}
           projectData={projectData}
+          projectInfo={projectInfo}
           onResetSession={handleResetSession}
           currentModel={currentModel}
           availableModels={availableModels}

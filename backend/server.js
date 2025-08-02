@@ -53,6 +53,13 @@ io.on('connection', (socket) => {
   
   // Send available models
   socket.emit('available_models', getAllModels());
+  
+  // Send project path info
+  const projectRoot = path.resolve(__dirname, '..');
+  socket.emit('project_info', { 
+    projectRoot,
+    specsDir: path.join(projectRoot, 'specs')
+  });
 
   // Handle user messages
   socket.on('user_message', async (data) => {
