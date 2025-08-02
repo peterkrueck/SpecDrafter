@@ -20,14 +20,14 @@ class DualProcessOrchestrator extends EventEmitter {
     });
     
     // Initialize both Claude processes
-    const requirementsPath = path.join(__dirname, '../workspaces/requirements-discovery');
+    const discoveryPath = path.join(__dirname, '../workspaces/requirements-discovery');
     const reviewPath = path.join(__dirname, '../workspaces/technical-review');
     
-    this.requirementsProcess = new ClaudeSDKManager('requirements', requirementsPath, this.currentModelConfig);
+    this.discoveryProcess = new ClaudeSDKManager('discovery', discoveryPath, this.currentModelConfig);
     this.reviewProcess = new ClaudeSDKManager('review', reviewPath, this.currentModelConfig);
     
     // Current state
-    this.activeProcess = 'requirements';
+    this.activeProcess = 'discovery';
     this.collaborationState = 'discovering'; // discovering → drafting → reviewing → refining
     this.currentSpecDraft = null;
     
@@ -36,19 +36,19 @@ class DualProcessOrchestrator extends EventEmitter {
   }
 
   setupProcessHandlers() {
-    // Requirements process handlers
-    this.requirementsProcess.on('data', (data) => {
-      this.handleRequirementsOutput(data);
+    // Discovery process handlers
+    this.discoveryProcess.on('data', (data) => {
+      this.handleDiscoveryOutput(data);
     });
 
-    this.requirementsProcess.on('error', (error) => {
-      this.logger.error('Requirements process error', { error: error.message });
-      this.emit('error', { process: 'requirements', error });
+    this.discoveryProcess.on('error', (error) => {
+      this.logger.error('Discovery process error', { error: error.message });
+      this.emit('error', { process: 'discovery', error });
     });
 
-    this.requirementsProcess.on('exit', (exitInfo) => {
-      this.logger.warn('Requirements process exited', exitInfo);
-      this.emit('process_exit', { process: 'requirements', ...exitInfo });
+    this.discoveryProcess.on('exit', (exitInfo) => {
+      this.logger.warn('Discovery process exited', exitInfo);
+      this.emit('process_exit', { process: 'discovery', ...exitInfo });
     });
 
     // Review process handlers
@@ -67,8 +67,8 @@ class DualProcessOrchestrator extends EventEmitter {
     });
   }
 
-  handleRequirementsOutput(data) {
-    this.logger.debug('Requirements output', { 
+  handleDiscoveryOutput(data) {
+    this.logger.debug('Discovery output', { 
       type: data.type, 
       contentType: typeof data.content,
       preview: JSON.stringify(data.content).substring(0, 100) 
@@ -78,8 +78,14 @@ class DualProcessOrchestrator extends EventEmitter {
     if (data.type === 'assistant_response') {
       const textContent = data.content;
       
+      // Check for AI-to-AI communication markers
+      if (textContent.includes('@review:')) {
+        this.handleAIToAICommunication('discovery', 'review', textContent);
+        return; // Don't emit regular message
+      }
+      
       // Emit to frontend
-      this.emit('requirements_message', {
+      this.emit('discovery_message', {
         content: textContent,
         type: 'assistant',
         metadata: data.metadata,
@@ -95,7 +101,7 @@ class DualProcessOrchestrator extends EventEmitter {
         // Notify frontend about collaboration
         this.emit('collaboration_detected', {
           type: 'draft_ready',
-          from: 'requirements',
+          from: 'discovery',
           to: 'review'
         });
       }
@@ -113,6 +119,12 @@ class DualProcessOrchestrator extends EventEmitter {
     if (data.type === 'assistant_response') {
       const textContent = data.content;
       
+      // Check for AI-to-AI communication markers
+      if (textContent.includes('@discovery:')) {
+        this.handleAIToAICommunication('review', 'discovery', textContent);
+        return; // Don't emit regular message
+      }
+      
       // Emit to frontend
       this.emit('review_message', {
         content: textContent,
@@ -121,14 +133,14 @@ class DualProcessOrchestrator extends EventEmitter {
         timestamp: new Date().toISOString()
       });
 
-      // Check if this is feedback that should go back to requirements
+      // Check if this is feedback that should go back to discovery
       if (this.isFeedback(textContent)) {
         this.collaborationState = 'refining';
         
         this.emit('collaboration_detected', {
           type: 'feedback_ready',
           from: 'review',
-          to: 'requirements'
+          to: 'discovery'
         });
       }
     }
@@ -140,10 +152,10 @@ class DualProcessOrchestrator extends EventEmitter {
     try {
       // Requirements process uses the GEMINI.md instructions via CLAUDE.md in its workspace
       // Just send an initial greeting to establish the session
-      const requirementsPrompt = `Hello! I'm ready to help discover requirements for a new project. Please tell me what you'd like to build.`;
+      const discoveryPrompt = `Hello! I'm ready to help discover requirements for a new project. Please tell me what you'd like to build.`;
       
       this.logger.info('Spawning requirements process...');
-      await this.requirementsProcess.spawn(requirementsPrompt, false);
+      await this.discoveryProcess.spawn(discoveryPrompt, false);
       this.logger.info('Requirements process spawned');
 
       // Review process uses the CLAUDE2.md instructions via CLAUDE.md in its workspace
@@ -168,10 +180,10 @@ class DualProcessOrchestrator extends EventEmitter {
       collaborationState: this.collaborationState 
     });
 
-    if (this.activeProcess === 'requirements') {
-      // Send to requirements process with --continue to maintain context
+    if (this.activeProcess === 'discovery') {
+      // Send to discovery process with --continue to maintain context
       const prompt = `The user says: "${message}"`;
-      await this.requirementsProcess.spawn(prompt, true);
+      await this.discoveryProcess.spawn(prompt, true);
     } else {
       // User is directly talking to review process (rare but possible)
       const prompt = `The user says: "${message}"`;
@@ -202,9 +214,9 @@ Consider:
     await this.reviewProcess.spawn(reviewPrompt, true);
   }
 
-  async sendFeedbackToRequirements(feedback) {
-    this.logger.info('Sending feedback to requirements process');
-    this.activeProcess = 'requirements';
+  async sendFeedbackToDiscovery(feedback) {
+    this.logger.info('Sending feedback to discovery process');
+    this.activeProcess = 'discovery';
     this.collaborationState = 'refining';
 
     const feedbackPrompt = `The technical reviewer provided this feedback on your specification:
@@ -213,7 +225,7 @@ ${feedback}
 
 Please revise the specification based on this feedback.`;
 
-    await this.requirementsProcess.spawn(feedbackPrompt, true);
+    await this.discoveryProcess.spawn(feedbackPrompt, true);
   }
 
   switchActiveProcess(processName) {
@@ -275,13 +287,39 @@ Please revise the specification based on this feedback.`;
     );
   }
 
+  async handleAIToAICommunication(from, to, fullContent) {
+    // Extract the message after the marker
+    const marker = `@${to}:`;
+    const markerIndex = fullContent.indexOf(marker);
+    const message = fullContent.substring(markerIndex + marker.length).trim();
+    
+    this.logger.info('AI-to-AI communication detected', { from, to, messageLength: message.length });
+    
+    // Emit the AI-to-AI message for the collaboration tab
+    this.emit('ai_collaboration_message', {
+      from: from === 'discovery' ? 'Discovery AI' : 'Review AI',
+      to: to === 'discovery' ? 'Discovery AI' : 'Review AI',
+      content: message,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Route the message to the target AI
+    if (to === 'review') {
+      this.activeProcess = 'review';
+      await this.reviewProcess.spawn(message, true);
+    } else if (to === 'discovery') {
+      this.activeProcess = 'discovery';
+      await this.discoveryProcess.spawn(message, true);
+    }
+  }
+
   async resetProcesses() {
     this.logger.info('Resetting both processes');
     
-    await this.requirementsProcess.kill();
+    await this.discoveryProcess.kill();
     await this.reviewProcess.kill();
     
-    this.activeProcess = 'requirements';
+    this.activeProcess = 'discovery';
     this.collaborationState = 'discovering';
     this.currentSpecDraft = null;
     
@@ -305,7 +343,7 @@ Please revise the specification based on this feedback.`;
     
     // Change model for both processes
     await Promise.all([
-      this.requirementsProcess.changeModel(modelId),
+      this.discoveryProcess.changeModel(modelId),
       this.reviewProcess.changeModel(modelId)
     ]);
     
@@ -322,7 +360,7 @@ Please revise the specification based on this feedback.`;
       hasSpecDraft: !!this.currentSpecDraft,
       currentModel: this.currentModelConfig,
       processes: {
-        requirements: this.requirementsProcess.getStatus(),
+        discovery: this.discoveryProcess.getStatus(),
         review: this.reviewProcess.getStatus()
       }
     };
@@ -330,7 +368,7 @@ Please revise the specification based on this feedback.`;
 
   async shutdown() {
     this.logger.info('Shutting down orchestrator');
-    await this.requirementsProcess.kill();
+    await this.discoveryProcess.kill();
     await this.reviewProcess.kill();
   }
 }

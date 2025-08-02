@@ -48,17 +48,15 @@ function App() {
     });
 
     socket.on('collaboration_detected', (data) => {
-      setCollaboration(prev => [...prev, {
-        type: 'command',
-        command: data.command,
-        timestamp: data.timestamp
-      }]);
+      // This is just for detection events, actual messages come through ai_collaboration_message
+      console.log('Collaboration detected:', data);
     });
 
-    socket.on('claude_response', (data) => {
+    socket.on('ai_collaboration_message', (data) => {
       setCollaboration(prev => [...prev, {
-        type: 'response',
-        response: data.response,
+        from: data.from,
+        to: data.to,
+        content: data.content,
         timestamp: data.timestamp
       }]);
     });
