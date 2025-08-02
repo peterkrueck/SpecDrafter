@@ -31,12 +31,8 @@ export function useSocket() {
       });
     });
 
-    newSocket.on('review_message', (data) => {
-      console.log('[FRONTEND] 🔷 Review AI message received', { 
-        messageLength: data.content?.length || 0,
-        timestamp: data.timestamp 
-      });
-    });
+    // Review AI messages are no longer sent to frontend
+    // They are automatically routed to Discovery AI via collaboration channel
 
     newSocket.on('collaboration_detected', (data) => {
       console.log('[FRONTEND] 🤝 AI collaboration detected', data);

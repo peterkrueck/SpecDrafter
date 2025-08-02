@@ -48,24 +48,11 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, on
       setIsGeneratingSpec(false);
     });
 
-    // Handle messages from Review AI
-    socket.on('review_message', (data) => {
-      const newMessage = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        message: data.content,
-        isUser: false,
-        speaker: 'Review AI',
-        timestamp: data.timestamp || new Date().toISOString()
-      };
-      setMessages(prev => [...prev, newMessage]);
-      
-      // Reset generating state when we receive a response
-      setIsGeneratingSpec(false);
-    });
+    // Note: Review AI messages are no longer shown in chat
+    // They are automatically routed to Discovery AI and appear in collaboration tab
 
     return () => {
       socket.off('discovery_message');
-      socket.off('review_message');
     };
   }, [socket, setMessages]);
 

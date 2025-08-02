@@ -109,7 +109,7 @@ class DualProcessOrchestrator extends EventEmitter {
     }
   }
 
-  handleReviewOutput(data) {
+  async handleReviewOutput(data) {
     this.logger.debug('Review output', { 
       type: data.type, 
       contentType: typeof data.content,
@@ -120,30 +120,39 @@ class DualProcessOrchestrator extends EventEmitter {
     if (data.type === 'assistant_response') {
       const textContent = data.content;
       
-      // Check for AI-to-AI communication markers
-      if (textContent.includes('@discovery:')) {
-        this.handleAIToAICommunication('review', 'discovery', textContent);
-        return; // Don't emit regular message
-      }
-      
-      // Emit to frontend
-      this.emit('review_message', {
-        content: textContent,
-        type: 'assistant',
-        metadata: data.metadata,
-        timestamp: new Date().toISOString()
+      // ALL Review AI output goes to Discovery AI via collaboration channel
+      this.logger.info('🤖➡️🤖 Review AI output always routes to Discovery AI', { 
+        contentLength: textContent.length 
       });
-
-      // Check if this is feedback that should go back to discovery
-      if (this.isFeedback(textContent)) {
-        this.collaborationState = 'refining';
-        
-        this.emit('collaboration_detected', {
-          type: 'feedback_ready',
-          from: 'review',
-          to: 'discovery'
-        });
-      }
+      
+      // Emit AI-to-AI collaboration message for the collaboration tab
+      const collaborationData = {
+        from: 'Review AI',
+        to: 'Discovery AI',
+        content: textContent,
+        timestamp: new Date().toISOString()
+      };
+      
+      this.emit('ai_collaboration_message', collaborationData);
+      
+      // Automatically forward to Discovery AI
+      this.activeProcess = 'discovery';
+      const forwardMessage = `Technical Review feedback:\n\n${textContent}`;
+      this.logger.info('🔄 Forwarding Review AI output to Discovery AI', { 
+        messageLength: forwardMessage.length 
+      });
+      
+      // Use spawn to send the message to Discovery AI
+      await this.discoveryProcess.spawn(forwardMessage, true);
+      
+      // Update collaboration state
+      this.collaborationState = 'refining';
+      
+      this.emit('collaboration_detected', {
+        type: 'feedback_ready',
+        from: 'review',
+        to: 'discovery'
+      });
     }
   }
 
@@ -168,15 +177,11 @@ class DualProcessOrchestrator extends EventEmitter {
       await this.discoveryProcess.spawn(discoveryPrompt, false);
       this.logger.info('✅ Discovery process spawned successfully');
 
-      // Review process uses the CLAUDE2.md instructions via CLAUDE.md in its workspace
-      // Initialize it but it will wait for specifications to review
-      const reviewPrompt = `I'm ready to provide technical review and analysis when needed.`;
+      // Review AI will be started on-demand when needed
+      // No need to spawn it during initialization
+      this.logger.info('ℹ️ Review AI will be started on-demand when needed');
       
-      this.logger.info('🤖 Spawning review process...');
-      await this.reviewProcess.spawn(reviewPrompt, false);
-      this.logger.info('✅ Review process spawned successfully');
-      
-      this.logger.info('🎉 Both processes spawned, emitting processes_started event');
+      this.logger.info('🎉 Discovery process ready, emitting processes_started event');
       this.emit('processes_started');
     } catch (error) {
       this.logger.error('❌ Failed to start processes', { error: error.message, stack: error.stack });
@@ -191,17 +196,14 @@ class DualProcessOrchestrator extends EventEmitter {
       messageLength: message.length
     });
 
-    if (this.activeProcess === 'discovery') {
-      // Send to discovery process with --continue to maintain context
-      const prompt = `The user says: "${message}"`;
-      this.logger.info('🔄 Sending message to Discovery AI', { promptLength: prompt.length });
-      await this.discoveryProcess.spawn(prompt, true);
-    } else {
-      // User is directly talking to review process (rare but possible)
-      const prompt = `The user says: "${message}"`;
-      this.logger.info('🔄 Sending message to Review AI', { promptLength: prompt.length });
-      await this.reviewProcess.spawn(prompt, true);
-    }
+    // ALWAYS route user messages to Discovery AI
+    // Review AI is a backend service that doesn't interact with users
+    const prompt = `The user says: "${message}"`;
+    this.logger.info('🔄 Sending message to Discovery AI', { promptLength: prompt.length });
+    
+    // Ensure we're on discovery process
+    this.activeProcess = 'discovery';
+    await this.discoveryProcess.spawn(prompt, true);
   }
 
   async triggerReview() {
@@ -242,12 +244,19 @@ Please revise the specification based on this feedback.`;
   }
 
   switchActiveProcess(processName) {
-    if (processName !== 'requirements' && processName !== 'review') {
+    // Review AI is now a backend service - users can't switch to it
+    if (processName === 'review') {
+      this.logger.warn('Cannot switch to Review AI - it is a backend service for Discovery AI');
+      return;
+    }
+    
+    if (processName !== 'discovery' && processName !== 'requirements') {
       this.logger.error('Invalid process name', { processName });
       return;
     }
 
-    this.activeProcess = processName;
+    // Map 'requirements' to 'discovery' for backward compatibility
+    this.activeProcess = processName === 'requirements' ? 'discovery' : processName;
     this.logger.info('Switched active process', { activeProcess: this.activeProcess });
     
     this.emit('active_process_changed', { 
@@ -333,8 +342,15 @@ Please revise the specification based on this feedback.`;
     // Route the message to the target AI
     if (to === 'review') {
       this.activeProcess = 'review';
-      this.logger.info('🔄 Routing AI message to Review AI', { messageLength: message.length });
-      await this.reviewProcess.spawn(message, true);
+      
+      // Check if Review AI needs to be started (lazy initialization)
+      if (!this.reviewProcess.isRunning) {
+        this.logger.info('🚀 Starting Review AI on demand for first review request');
+        await this.reviewProcess.spawn(message, false); // false = not continue, this is the first message
+      } else {
+        this.logger.info('🔄 Routing AI message to Review AI', { messageLength: message.length });
+        await this.reviewProcess.spawn(message, true); // true = continue existing session
+      }
     } else if (to === 'discovery') {
       this.activeProcess = 'discovery';
       this.logger.info('🔄 Routing AI message to Discovery AI', { messageLength: message.length });
@@ -343,16 +359,20 @@ Please revise the specification based on this feedback.`;
   }
 
   async resetProcesses() {
-    this.logger.info('Resetting both processes');
+    this.logger.info('Resetting processes');
     
+    // Kill both processes if they're running
     await this.discoveryProcess.kill();
-    await this.reviewProcess.kill();
+    if (this.reviewProcess.isRunning) {
+      await this.reviewProcess.kill();
+    }
     
     this.activeProcess = 'discovery';
     this.collaborationState = 'discovering';
     this.currentSpecDraft = null;
     
-    // Restart after a delay
+    // Restart only Discovery AI after a delay
+    // Review AI will be started on-demand
     setTimeout(() => {
       this.startProcesses();
     }, 2000);

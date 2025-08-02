@@ -61,16 +61,16 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
   - Initiates AI-to-AI communication using `@review:` markers
   
 - **Review AI** (workspace: `backend/workspaces/technical-review/`)
-  - Uses Review AI instructions (via CLAUDE.md in its workspace)
+  - Backend service that only communicates with Discovery AI
+  - Lazy initialization - starts on-demand when Discovery AI needs review
   - Provides technical analysis and feasibility review
-  - Challenges assumptions and suggests improvements
-  - Responds to Discovery AI using `@discovery:` markers
+  - All output automatically routed to Discovery AI (no user interaction)
 
 #### 3. Socket.IO Event Architecture
 - **Client → Server**: 
   - `user_message`: User chat messages
   - `start_processes`: Manual process initialization
-  - `switch_process`: Switch active AI
+  - `switch_process`: Switch active AI (Discovery only - cannot switch to Review)
   - `trigger_review`: Initiate specification review
   - `reset_session`: Clear and restart
   - `change_model`: Switch between Claude 4 models (Opus/Sonnet)
@@ -78,7 +78,6 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
   
 - **Server → Client**: 
   - `discovery_message`: Messages from Discovery AI
-  - `review_message`: Messages from Review AI
   - `ai_collaboration_message`: AI-to-AI communication events
   - `typing_indicator`: Show which AI is typing
   - `collaboration_detected`: AI-to-AI interaction events
@@ -105,10 +104,10 @@ App.jsx
 
 **User-to-AI Communication:**
 1. User sends message via ChatPanel
-2. Server routes to active Claude process (default: discovery)
+2. Server always routes to Discovery AI (users cannot talk to Review AI)
 3. ClaudeSDKManager processes with Claude SDK
-4. Response emitted as `discovery_message` or `review_message`
-5. Frontend displays with appropriate speaker identification
+4. Response emitted as `discovery_message`
+5. Frontend displays in chat panel
 
 **AI-to-AI Communication:**
 1. AI includes `@review:` or `@discovery:` marker in response
@@ -118,23 +117,23 @@ App.jsx
 5. CollaborationView displays real-time AI conversation
 
 ### AI-to-AI Communication Protocol
-The system implements autonomous AI-to-AI communication using special markers:
+The system implements autonomous AI-to-AI communication:
 
-**Communication Markers:**
-- `@review:` - Discovery AI sends messages to Review AI  
-- `@discovery:` - Review AI responds to Discovery AI
+**Communication Flow:**
+- `@review:` - Discovery AI sends messages to Review AI
+- Review AI responses are automatically routed back to Discovery AI (no markers needed)
 
-**Message Routing Flow:**
-1. AI output is parsed for special markers (`dual-process-orchestrator.js:82-84, 123-125`)
-2. Content after marker is extracted and forwarded to target AI
-3. Original message is not emitted as regular user-facing message
-4. AI-to-AI communication triggers `ai_collaboration_message` Socket.IO event
+**Message Routing:**
+1. Discovery AI includes `@review:` marker to send messages to Review AI
+2. Content after marker is extracted and forwarded to Review AI
+3. ALL Review AI output is automatically routed to Discovery AI via `ai_collaboration_message`
+4. Review AI operates as a backend service with no direct user interaction
 5. Real-time collaboration appears in CollaborationView.jsx panel
 
 **Implementation Details:**
-- `handleAIToAICommunication()` in orchestrator manages message routing
-- Sessions persist across AI-to-AI exchanges using `--continue` flag
-- Both AIs can communicate autonomously without user intervention
+- Review AI uses lazy initialization - starts only when first needed
+- `handleAIToAICommunication()` manages Discovery→Review routing
+- `handleReviewOutput()` automatically routes all Review output to Discovery
 - All AI-to-AI communication is logged and displayed in collaboration tab
 
 ### Specification Generation Flow
@@ -145,15 +144,15 @@ The system implements autonomous AI-to-AI communication using special markers:
 3. **Specification Writing**: Discovery AI creates technical spec at `/Users/peterkruck/repos/SpecDrafter/specs/[ProjectName]/spec.md`
 4. **Automatic Review**: Discovery AI immediately sends `@review:` message to Review AI
 5. **Technical Analysis**: Review AI reads spec file and provides implementation feedback
-6. **Iterative Refinement**: AIs collaborate via `@discovery:` and `@review:` markers
+6. **Iterative Refinement**: Discovery uses `@review:`, Review responses auto-route back
 7. **Real-time Display**: File watcher detects changes and updates SpecView automatically
 
 #### Manual Workflow (Conversation-Based)
 1. **Discovery Phase**: Discovery AI gathers project details from user
 2. **Draft Detection**: When draft specification is detected, orchestrator notifies frontend
 3. **AI-to-AI Review**: Discovery AI sends `@review:` message with specification
-4. **Technical Feedback**: Review AI responds with `@discovery:` feedback and analysis
-5. **Autonomous Iteration**: AIs continue collaborating using markers until consensus
+4. **Technical Feedback**: Review AI analyzes and responds (automatically routed to Discovery)
+5. **Autonomous Iteration**: AIs continue collaborating until consensus
 6. **File Generation**: Specifications saved to `specs/[ProjectName]/spec.md`
 7. **UI Display**: File watcher detects and displays final specs in UI
 
@@ -320,7 +319,7 @@ SpecDrafter/
 - CollaborationView shows real-time AI conversation flow
 
 ### Common Issues
-- If messages don't appear: Check event name matching (discovery_message/review_message/ai_collaboration_message)
+- If messages don't appear: Check event name matching (discovery_message/ai_collaboration_message)
 - If Claude doesn't respond: Verify SDK installation and credentials
 - If sessions don't persist: Check session ID handling in ClaudeSDKManager
 - If AI-to-AI communication fails: Check marker parsing in handleAIToAICommunication
