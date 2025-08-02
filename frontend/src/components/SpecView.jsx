@@ -28,8 +28,8 @@ function SpecView({ content }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="p-4 border-b border-white/10 flex justify-between items-center">
+    <>
+      <div className="p-4 border-b border-white/10 flex justify-between items-center flex-shrink-0">
         <div className="text-sm text-gray-300">
           📁 {content.filePath || 'Generated Specification'}
         </div>
@@ -51,7 +51,7 @@ function SpecView({ content }) {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
