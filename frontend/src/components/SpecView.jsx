@@ -3,10 +3,13 @@ import React from 'react';
 function SpecView({ content }) {
   if (!content) {
     return (
-      <div className="flex-1 p-4 flex items-center justify-center">
-        <div className="text-center text-gray-400">
-          <div className="text-4xl mb-4">📝</div>
-          <p>Generated specifications will appear here when ready.</p>
+      <div className="flex-1 p-6 flex items-center justify-center bg-black/20">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-500/10 rounded-2xl mb-4 border border-purple-500/20">
+            <span className="text-4xl">📝</span>
+          </div>
+          <p className="text-gray-400 text-lg">Generated specifications will appear here</p>
+          <p className="text-gray-500 text-sm mt-2">Complete your requirements discovery to see the spec</p>
         </div>
       </div>
     );
@@ -38,11 +41,15 @@ function SpecView({ content }) {
         </button>
       </div>
       
-      <div className="flex-1 p-4 overflow-y-auto scrollbar-collab smooth-scroll">
-        <div 
-          className="prose prose-invert prose-sm max-w-none animate-fade-in"
-          dangerouslySetInnerHTML={{ __html: content.html }}
-        />
+      <div className="flex-1 p-6 overflow-y-auto scrollbar-collab smooth-scroll bg-black/20">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white/[0.02] backdrop-blur-sm rounded-xl p-8 border border-purple-500/10">
+            <div 
+              className="prose prose-invert prose-sm max-w-none animate-fade-in spec-content"
+              dangerouslySetInnerHTML={{ __html: content.html }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

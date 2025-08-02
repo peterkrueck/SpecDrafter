@@ -4,6 +4,7 @@ import { createLogger } from './logger.js';
 import { getDefaultModel, getModelById } from './models.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -147,46 +148,58 @@ class DualProcessOrchestrator extends EventEmitter {
   }
 
   async startProcesses() {
-    this.logger.info('startProcesses() called');
+    this.logger.info('🚀 startProcesses() called');
+    
+    // Log workspace paths for debugging
+    const discoveryPath = path.join(__dirname, '../workspaces/requirements-discovery');
+    const reviewPath = path.join(__dirname, '../workspaces/technical-review');
+    this.logger.info('🔍 ORCHESTRATOR WORKSPACE DIAGNOSTICS:');
+    this.logger.info(`  Discovery AI workspace: ${discoveryPath}`);
+    this.logger.info(`  Review AI workspace: ${reviewPath}`);
+    this.logger.info(`  Discovery workspace exists: ${fs.existsSync(discoveryPath)}`);
+    this.logger.info(`  Review workspace exists: ${fs.existsSync(reviewPath)}`);
     
     try {
       // Requirements process uses the GEMINI.md instructions via CLAUDE.md in its workspace
       // Just send an initial greeting to establish the session
       const discoveryPrompt = `Hello! I'm ready to help discover requirements for a new project. Please tell me what you'd like to build.`;
       
-      this.logger.info('Spawning requirements process...');
+      this.logger.info('🤖 Spawning discovery process...');
       await this.discoveryProcess.spawn(discoveryPrompt, false);
-      this.logger.info('Requirements process spawned');
+      this.logger.info('✅ Discovery process spawned successfully');
 
       // Review process uses the CLAUDE2.md instructions via CLAUDE.md in its workspace
       // Initialize it but it will wait for specifications to review
       const reviewPrompt = `I'm ready to provide technical review and analysis when needed.`;
       
-      this.logger.info('Spawning review process...');
+      this.logger.info('🤖 Spawning review process...');
       await this.reviewProcess.spawn(reviewPrompt, false);
-      this.logger.info('Review process spawned');
+      this.logger.info('✅ Review process spawned successfully');
       
-      this.logger.info('Both processes spawned, emitting processes_started event');
+      this.logger.info('🎉 Both processes spawned, emitting processes_started event');
       this.emit('processes_started');
     } catch (error) {
-      this.logger.error('Failed to start processes', { error: error.message, stack: error.stack });
+      this.logger.error('❌ Failed to start processes', { error: error.message, stack: error.stack });
       throw error;
     }
   }
 
   async routeUserMessage(message) {
-    this.logger.info('Routing user message', { 
+    this.logger.info('📨 Routing user message', { 
       activeProcess: this.activeProcess,
-      collaborationState: this.collaborationState 
+      collaborationState: this.collaborationState,
+      messageLength: message.length
     });
 
     if (this.activeProcess === 'discovery') {
       // Send to discovery process with --continue to maintain context
       const prompt = `The user says: "${message}"`;
+      this.logger.info('🔄 Sending message to Discovery AI', { promptLength: prompt.length });
       await this.discoveryProcess.spawn(prompt, true);
     } else {
       // User is directly talking to review process (rare but possible)
       const prompt = `The user says: "${message}"`;
+      this.logger.info('🔄 Sending message to Review AI', { promptLength: prompt.length });
       await this.reviewProcess.spawn(prompt, true);
     }
   }
@@ -293,22 +306,38 @@ Please revise the specification based on this feedback.`;
     const markerIndex = fullContent.indexOf(marker);
     const message = fullContent.substring(markerIndex + marker.length).trim();
     
-    this.logger.info('AI-to-AI communication detected', { from, to, messageLength: message.length });
+    this.logger.info('🤖↔️🤖 AI-to-AI communication detected', { 
+      from, 
+      to, 
+      messageLength: message.length,
+      marker,
+      fullContentLength: fullContent.length
+    });
     
     // Emit the AI-to-AI message for the collaboration tab
-    this.emit('ai_collaboration_message', {
+    const collaborationData = {
       from: from === 'discovery' ? 'Discovery AI' : 'Review AI',
       to: to === 'discovery' ? 'Discovery AI' : 'Review AI',
       content: message,
       timestamp: new Date().toISOString()
+    };
+    
+    this.logger.info('📡 Emitting ai_collaboration_message event', { 
+      from: collaborationData.from, 
+      to: collaborationData.to,
+      contentLength: collaborationData.content.length
     });
+    
+    this.emit('ai_collaboration_message', collaborationData);
     
     // Route the message to the target AI
     if (to === 'review') {
       this.activeProcess = 'review';
+      this.logger.info('🔄 Routing AI message to Review AI', { messageLength: message.length });
       await this.reviewProcess.spawn(message, true);
     } else if (to === 'discovery') {
       this.activeProcess = 'discovery';
+      this.logger.info('🔄 Routing AI message to Discovery AI', { messageLength: message.length });
       await this.discoveryProcess.spawn(message, true);
     }
   }

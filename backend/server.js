@@ -229,20 +229,51 @@ function setupOrchestratorHandlers() {
 
 // File watcher event handlers
 fileWatcher.on('spec_file_generated', (data) => {
-  logger.info('Spec file generated', { filePath: data.filePath });
+  logger.info('📄 Spec file generated, emitting to clients', { filePath: data.filePath, clientCount: io.engine.clientsCount });
   io.emit('spec_file_generated', data);
 });
 
 fileWatcher.on('spec_file_updated', (data) => {
-  logger.info('Spec file updated', { filePath: data.filePath });
+  logger.info('✏️  Spec file updated, emitting to clients', { filePath: data.filePath, clientCount: io.engine.clientsCount });
   io.emit('spec_file_updated', data);
 });
 
 fileWatcher.on('error', (error) => {
-  logger.error('File watcher error', { message: error.message });
+  logger.error('❌ File watcher error', { message: error.message });
 });
 
+// Startup diagnostics
+import fs from 'fs';
+const specsDir = path.resolve(__dirname, '../specs');
+logger.info('🔍 SERVER STARTUP DIAGNOSTICS:');
+logger.info(`  Server working directory: ${process.cwd()}`);
+logger.info(`  Backend directory: ${__dirname}`);
+logger.info(`  Expected specs directory: ${specsDir}`);
+logger.info(`  Specs directory exists: ${fs.existsSync(specsDir)}`);
+
+if (fs.existsSync(specsDir)) {
+  try {
+    const contents = fs.readdirSync(specsDir, { withFileTypes: true });
+    logger.info(`  Specs directory contents (${contents.length} items):`);
+    contents.forEach(item => {
+      logger.info(`    ${item.isDirectory() ? '[DIR]' : '[FILE]'} ${item.name}`);
+      if (item.isDirectory()) {
+        const subDir = path.join(specsDir, item.name);
+        try {
+          const subContents = fs.readdirSync(subDir);
+          logger.info(`      └─ Contents: ${subContents.join(', ')}`);
+        } catch (err) {
+          logger.info(`      └─ Error reading: ${err.message}`);
+        }
+      }
+    });
+  } catch (error) {
+    logger.error(`  Error reading specs directory: ${error.message}`);
+  }
+}
+
 // Start file watcher
+logger.info('🚀 Starting file watcher...');
 fileWatcher.start();
 
 // Graceful shutdown
