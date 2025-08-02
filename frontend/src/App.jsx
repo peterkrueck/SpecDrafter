@@ -10,6 +10,7 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [currentView, setCurrentView] = useState('ai-collab');
   const [typingState, setTypingState] = useState({ isTyping: false, speaker: '' });
+  const [collaborationTypingState, setCollaborationTypingState] = useState({ isTyping: false, speaker: '' });
   const [collaboration, setCollaboration] = useState([]);
   const [specContent, setSpecContent] = useState(null);
   const [currentModel, setCurrentModel] = useState(null);
@@ -60,6 +61,10 @@ function App() {
         timestamp: data.timestamp
       }]);
     });
+    
+    socket.on('ai_collaboration_typing', (data) => {
+      setCollaborationTypingState({ isTyping: data.isTyping, speaker: data.speaker || '' });
+    });
 
     socket.on('spec_file_generated', (data) => {
       setSpecContent({
@@ -89,6 +94,7 @@ function App() {
       socket.off('typing_indicator');
       socket.off('collaboration_detected');
       socket.off('ai_collaboration_message');
+      socket.off('ai_collaboration_typing');
       socket.off('spec_file_generated');
       socket.off('spec_file_updated');
       socket.off('available_models');
@@ -151,6 +157,7 @@ function App() {
           setCurrentView={setCurrentView}
           collaboration={collaboration}
           specContent={specContent}
+          typingState={collaborationTypingState}
         />
       </div>
       

@@ -58,13 +58,6 @@ io.on('connection', (socket) => {
   socket.on('user_message', async (data) => {
     logger.info('User message received', logger.truncateOutput(data.message, 100));
     
-    // Send typing indicator
-    const activeProcess = orchestrator.activeProcess;
-    socket.emit('typing_indicator', { 
-      isTyping: true, 
-      speaker: activeProcess === 'requirements' ? 'Requirements AI' : 'Review AI' 
-    });
-    
     // Route message through orchestrator
     await orchestrator.routeUserMessage(data.message);
   });
@@ -233,6 +226,21 @@ function setupOrchestratorHandlers() {
   orchestrator.on('ai_collaboration_message', (data) => {
     logger.info('AI-to-AI collaboration message', { from: data.from, to: data.to });
     io.emit('ai_collaboration_message', data);
+  });
+  
+  orchestrator.on('ai_collaboration_typing', (data) => {
+    logger.info('AI collaboration typing indicator', { speaker: data.speaker, isTyping: data.isTyping });
+    io.emit('ai_collaboration_typing', data);
+  });
+  
+  orchestrator.on('hide_chat_typing', (data) => {
+    logger.info('Hiding chat typing indicator', { speaker: data.speaker });
+    io.emit('typing_indicator', { isTyping: false, speaker: data.speaker });
+  });
+  
+  orchestrator.on('typing_indicator', (data) => {
+    logger.info('Typing indicator from orchestrator', { speaker: data.speaker, isTyping: data.isTyping });
+    io.emit('typing_indicator', data);
   });
 }
 

@@ -81,8 +81,17 @@ class DualProcessOrchestrator extends EventEmitter {
       
       // Check for AI-to-AI communication markers
       if (textContent.includes('@review:')) {
+        // Hide chat typing indicator since we're starting AI collaboration
+        this.emit('hide_chat_typing', { speaker: 'Discovery AI' });
+        // Show Discovery AI typing in collaboration panel
+        this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Discovery AI' });
         this.handleAIToAICommunication('discovery', 'review', textContent);
         return; // Don't emit regular message
+      }
+      
+      // Emit typing stopped for AI collaboration if we were in collaboration
+      if (this.activeProcess === 'discovery' && this.collaborationState !== 'discovering') {
+        this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
       }
       
       // Emit to frontend
@@ -135,8 +144,15 @@ class DualProcessOrchestrator extends EventEmitter {
       
       this.emit('ai_collaboration_message', collaborationData);
       
+      // Stop typing indicator for Review AI
+      this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
+      
       // Automatically forward to Discovery AI
       this.activeProcess = 'discovery';
+      
+      // Emit typing indicator for Discovery AI receiving feedback
+      this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Discovery AI' });
+      
       const forwardMessage = `Technical Review feedback:\n\n${textContent}`;
       this.logger.info('🔄 Forwarding Review AI output to Discovery AI', { 
         messageLength: forwardMessage.length 
@@ -206,6 +222,10 @@ class DualProcessOrchestrator extends EventEmitter {
     
     // Ensure we're on discovery process
     this.activeProcess = 'discovery';
+    
+    // Emit typing indicator as Discovery AI is about to process the message
+    this.emit('typing_indicator', { isTyping: true, speaker: 'Discovery AI' });
+    
     await this.discoveryProcess.spawn(prompt, true);
   }
 
@@ -346,6 +366,9 @@ Please revise the specification based on this feedback.`;
     if (to === 'review') {
       this.activeProcess = 'review';
       
+      // Emit typing indicator for Review AI
+      this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Review AI' });
+      
       // Check if Review AI needs to be started (lazy initialization)
       if (!this.reviewProcess.isRunning) {
         this.logger.info('🚀 Starting Review AI on demand for first review request');
@@ -356,6 +379,10 @@ Please revise the specification based on this feedback.`;
       }
     } else if (to === 'discovery') {
       this.activeProcess = 'discovery';
+      
+      // Emit typing indicator for Discovery AI
+      this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Discovery AI' });
+      
       this.logger.info('🔄 Routing AI message to Discovery AI', { messageLength: message.length });
       await this.discoveryProcess.spawn(message, true);
     }
