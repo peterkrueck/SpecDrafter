@@ -93,32 +93,50 @@ I want to create this project. Please help me draft comprehensive specifications
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-8 max-w-2xl w-full">
+      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-8 max-w-4xl w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">SpecDrafter</h1>
-          <p className="text-gray-300">AI-powered specification drafting through collaborative intelligence</p>
+          <h1 className="text-3xl font-bold text-white">SpecDrafter</h1>
         </div>
 
-        <div className="space-y-6">
-          {/* Project Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
-              Project Name
-            </label>
-            <input
-              type="text"
-              value={formData.projectName}
-              onChange={(e) => handleInputChange('projectName', e.target.value)}
-              placeholder="Enter your project name..."
-              className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                errors.projectName 
-                  ? 'border-red-500 focus:ring-red-500' 
-                  : 'border-white/20 focus:ring-blue-500'
-              }`}
-            />
-            {errors.projectName && (
-              <p className="text-red-400 text-sm mt-1">{errors.projectName}</p>
-            )}
+        <div className="space-y-5">
+          {/* Project Name and Model Selection Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Project Name
+              </label>
+              <input
+                type="text"
+                value={formData.projectName}
+                onChange={(e) => handleInputChange('projectName', e.target.value)}
+                placeholder="Enter your project name..."
+                className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                  errors.projectName 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : 'border-white/20 focus:ring-blue-500'
+                }`}
+              />
+              {errors.projectName && (
+                <p className="text-red-400 text-sm mt-1">{errors.projectName}</p>
+              )}
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                AI Model
+              </label>
+              <select
+                value={formData.modelId}
+                onChange={(e) => handleInputChange('modelId', e.target.value)}
+                className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+              >
+                {models.map((model) => (
+                  <option key={model.id} value={model.id} className="bg-gray-900">
+                    {model.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Skill Level */}
@@ -152,12 +170,12 @@ I want to create this project. Please help me draft comprehensive specifications
             <label className="block text-sm font-medium text-gray-200 mb-3">
               What Do You Want to Build?
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {softwareTypes.map((type) => (
                 <button
                   key={type.id}
                   onClick={() => handleInputChange('softwareType', type.id)}
-                  className={`p-4 rounded-lg border transition-all duration-200 text-left ${
+                  className={`p-3 rounded-lg border transition-all duration-200 text-left ${
                     formData.softwareType === type.id
                       ? 'bg-purple-500/20 border-purple-500 text-purple-200'
                       : 'bg-white/5 border-white/20 text-gray-300 hover:bg-white/10 hover:border-white/30'
@@ -182,7 +200,7 @@ I want to create this project. Please help me draft comprehensive specifications
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Tell us about your project idea, key features, target users, and any specific requirements..."
-              rows={4}
+              rows={5}
               className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 resize-none ${
                 errors.description 
                   ? 'border-red-500 focus:ring-red-500' 
@@ -194,42 +212,18 @@ I want to create this project. Please help me draft comprehensive specifications
             )}
           </div>
 
-          {/* Model Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
-              AI Model Selection
-            </label>
-            <select
-              value={formData.modelId}
-              onChange={(e) => handleInputChange('modelId', e.target.value)}
-              className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-            >
-              {models.map((model) => (
-                <option key={model.id} value={model.id} className="bg-gray-900">
-                  {model.name} - {model.description}
-                </option>
-              ))}
-            </select>
-            <p className="text-gray-400 text-xs mt-1">
-              Both AIs will use this model. You can change it later during the session.
-            </p>
-          </div>
-
           {/* Start Button */}
-          <div className="pt-4">
+          <div className="pt-4 flex justify-center">
             <button
               onClick={handleStart}
               disabled={!formData.projectName || !formData.skillLevel || !formData.softwareType || !formData.description}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
+              className="w-full max-w-md bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
             >
               Start Drafting Specifications
             </button>
           </div>
         </div>
 
-        <div className="mt-8 text-center text-xs text-gray-400">
-          <p>SpecDrafter uses dual-AI collaboration to create comprehensive technical specifications</p>
-        </div>
       </div>
     </div>
   );
