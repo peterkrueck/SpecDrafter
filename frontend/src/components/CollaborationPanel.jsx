@@ -14,7 +14,7 @@ function CollaborationPanel({ currentView, setCurrentView, collaboration, specCo
               : 'bg-white/10 text-gray-300 hover:bg-white/20'
           }`}
         >
-          AI Collab
+          AI Dialogue
         </button>
         <button 
           onClick={() => setCurrentView('spec')}
