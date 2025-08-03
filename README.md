@@ -10,7 +10,7 @@ An AI collaboration platform that revolutionizes technical specification writing
 
 ## 🎯 Why SpecDrafter?
 
-> *Ever spent weeks building a feature only to realize it wasn't what the stakeholders actually needed?*
+> *Ever spent weeks building a feature only to realize it wasn't what you actually needed?*
 
 Building software without clear specifications is like constructing a house without blueprints. SpecDrafter ensures you build the right thing from the start.
 
@@ -37,6 +37,13 @@ Building software without clear specifications is like constructing a house with
 ### 🎉 The Result
 
 > **Transform vague ideas into implementation-ready specifications in minutes, not days. One click generates a complete technical spec with built-in feasibility validation.**
+
+
+<img width="1624" height="1056" alt="Screenshot 2025-08-03 at 20 19 12" src="https://github.com/user-attachments/assets/fd578ac6-3b8b-47c5-951e-241729ccb1a6" />
+
+
+<img width="1624" height="1056" alt="Screenshot 2025-08-03 at 20 13 16" src="https://github.com/user-attachments/assets/2671d7fd-772d-488e-a4d3-235ab508588e" />
+
 
 ## Quick Start
 
