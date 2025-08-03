@@ -143,6 +143,108 @@ io.on('connection', (socket) => {
     socket.emit('available_models', getAllModels());
   });
 
+  // List available specifications
+  socket.on('list_specs', async () => {
+    logger.info('📋 Listing available specifications');
+    try {
+      const specsDir = path.join(projectRoot, 'specs');
+      const specs = [];
+      
+      // Check if specs directory exists
+      if (fs.existsSync(specsDir)) {
+        const projects = await fs.promises.readdir(specsDir);
+        
+        for (const project of projects) {
+          const specPath = path.join(specsDir, project, 'spec.md');
+          try {
+            const stats = await fs.promises.stat(specPath);
+            specs.push({
+              projectName: project,
+              path: specPath,
+              lastModified: stats.mtime.toISOString(),
+              size: stats.size
+            });
+          } catch (err) {
+            // Skip if spec.md doesn't exist
+            logger.debug(`No spec.md found for project: ${project}`);
+          }
+        }
+      }
+      
+      logger.info(`📋 Found ${specs.length} specifications`);
+      socket.emit('specs_list', { specs });
+    } catch (error) {
+      logger.error('❌ Error listing specs', { error: error.message });
+      socket.emit('error', { message: 'Failed to list specifications' });
+    }
+  });
+
+  // Start with an existing specification
+  socket.on('start_with_existing_spec', async (data) => {
+    const { projectName, modelId, skillLevel } = data;
+    logger.info('🔄 Starting with existing specification', { projectName, modelId, skillLevel });
+    
+    try {
+      // Ensure specs directory path is absolute
+      const specPath = path.resolve(path.join(projectRoot, 'specs', projectName, 'spec.md'));
+      
+      // Verify the spec file exists
+      if (!fs.existsSync(specPath)) {
+        socket.emit('error', { message: `Specification not found for project: ${projectName}` });
+        return;
+      }
+      
+      // Create or update orchestrator with model
+      if (data.modelId) {
+        const modelConfig = getModelById(data.modelId);
+        if (modelConfig) {
+          if (orchestrator) {
+            await orchestrator.shutdown();
+          }
+          orchestrator = new DualProcessOrchestrator(modelConfig);
+          setupOrchestratorHandlers();
+        }
+      } else if (!orchestrator) {
+        // Create orchestrator with default model if none exists
+        orchestrator = new DualProcessOrchestrator();
+        setupOrchestratorHandlers();
+      }
+      
+      // Map skill level to user-friendly text
+      const skillLevelText = {
+        'non-tech': 'Non-Tech',
+        'tech-savvy': 'Tech-Savvy',
+        'software-professional': 'Software Professional'
+      }[skillLevel] || skillLevel;
+      
+      // Create context message with absolute path for Discovery AI
+      const contextMessage = `I'm continuing work on project "${projectName}".
+User's Technical Background: ${skillLevelText}
+The current specification is located at: ${specPath}
+Please read this specification file to understand the project. Keep in mind the user's technical background when communicating. Let me know how you'd like to proceed.`;
+      
+      logger.info('📝 Sending context message to Discovery AI', { 
+        projectName, 
+        specPath,
+        skillLevel: skillLevelText,
+        messageLength: contextMessage.length 
+      });
+      
+      // Start processes with the context message
+      await orchestrator.startProcesses(contextMessage);
+      
+      // Send project info to frontend
+      socket.emit('project_info', { 
+        projectPath: projectRoot,
+        specsPath: path.join(projectRoot, 'specs')
+      });
+      
+    } catch (error) {
+      logger.error('❌ Error starting with existing spec', { error: error.message });
+      socket.emit('error', { message: 'Failed to start with existing specification' });
+    }
+  });
+
   // Handle session reset
   socket.on('reset_session', async () => {
     logger.info('Session reset requested');

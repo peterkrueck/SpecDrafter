@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getAllModels, getDefaultModel, MODEL_STORAGE_KEY } from '../config/models.js';
+import SpecSelector from './SpecSelector';
+import { FileText, Plus } from 'lucide-react';
 
 function WelcomeScreen({ onStart, socket }) {
   const models = getAllModels();
   const defaultModel = getDefaultModel();
+  const [mode, setMode] = useState('new'); // 'new' or 'existing'
+  const [selectedSpec, setSelectedSpec] = useState(null);
   
   const [formData, setFormData] = useState({
     projectName: '',
@@ -52,17 +56,26 @@ function WelcomeScreen({ onStart, socket }) {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.projectName.trim()) {
-      newErrors.projectName = 'Project name is required';
-    }
-    if (!formData.skillLevel) {
-      newErrors.skillLevel = 'Please select your skill level';
-    }
-    if (!formData.softwareType) {
-      newErrors.softwareType = 'Please select software type';
-    }
-    if (!formData.description.trim()) {
-      newErrors.description = 'Please describe your project idea';
+    if (mode === 'new') {
+      if (!formData.projectName.trim()) {
+        newErrors.projectName = 'Project name is required';
+      }
+      if (!formData.skillLevel) {
+        newErrors.skillLevel = 'Please select your skill level';
+      }
+      if (!formData.softwareType) {
+        newErrors.softwareType = 'Please select software type';
+      }
+      if (!formData.description.trim()) {
+        newErrors.description = 'Please describe your project idea';
+      }
+    } else if (mode === 'existing') {
+      if (!selectedSpec) {
+        newErrors.selectedSpec = 'Please select a project to continue';
+      }
+      if (!formData.skillLevel) {
+        newErrors.skillLevel = 'Please select your skill level';
+      }
     }
 
     setErrors(newErrors);
@@ -70,20 +83,42 @@ function WelcomeScreen({ onStart, socket }) {
   };
 
   const handleStart = () => {
-    if (validateForm()) {
-      // Compose the initial message
-      const skillLevelText = skillLevels.find(s => s.id === formData.skillLevel)?.label || formData.skillLevel;
-      const softwareTypeText = softwareTypes.find(s => s.id === formData.softwareType)?.label || formData.softwareType;
-      
-      const initialMessage = `Project: ${formData.projectName}
+    if (mode === 'new') {
+      if (validateForm()) {
+        // Compose the initial message
+        const skillLevelText = skillLevels.find(s => s.id === formData.skillLevel)?.label || formData.skillLevel;
+        const softwareTypeText = softwareTypes.find(s => s.id === formData.softwareType)?.label || formData.softwareType;
+        
+        const initialMessage = `Project: ${formData.projectName}
 Skill Level: ${skillLevelText}
 Software Type: ${softwareTypeText}
 Description: ${formData.description}
 
 I want to create this project. Please help me draft comprehensive specifications.`;
 
-      onStart(formData, initialMessage);
+        onStart(formData, initialMessage);
+      }
+    } else if (mode === 'existing') {
+      if (validateForm()) {
+        // Start with existing spec
+        socket.emit('start_with_existing_spec', {
+          projectName: selectedSpec.projectName,
+          modelId: formData.modelId,
+          skillLevel: formData.skillLevel
+        });
+        
+        // Call onStart without initial message
+        onStart({
+          projectName: selectedSpec.projectName,
+          modelId: formData.modelId,
+          skillLevel: formData.skillLevel
+        }, null);
+      }
     }
+  };
+
+  const handleSpecSelect = (spec) => {
+    setSelectedSpec(spec);
   };
 
   return (
@@ -93,7 +128,36 @@ I want to create this project. Please help me draft comprehensive specifications
           <h1 className="text-3xl font-bold text-white">SpecDrafter</h1>
         </div>
 
-        <div className="space-y-5">
+        {/* Mode Toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex rounded-lg bg-white/5 p-1">
+            <button
+              onClick={() => setMode('new')}
+              className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+                mode === 'new'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Plus className="w-4 h-4" />
+              Start New Project
+            </button>
+            <button
+              onClick={() => setMode('existing')}
+              className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+                mode === 'existing'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              Continue Existing Project
+            </button>
+          </div>
+        </div>
+
+        {mode === 'new' ? (
+          <div className="space-y-5">
           {/* Project Name and Model Selection Row */}
           <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-4">
             <div>
@@ -218,6 +282,80 @@ I want to create this project. Please help me draft comprehensive specifications
             </button>
           </div>
         </div>
+        ) : (
+          /* Existing Project Mode */
+          <div className="space-y-5">
+            {/* Model Selection for Existing Projects */}
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                AI Model
+              </label>
+              <select
+                value={formData.modelId}
+                onChange={(e) => handleInputChange('modelId', e.target.value)}
+                className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+              >
+                {models.map(model => (
+                  <option key={model.id} value={model.id} className="bg-gray-800">
+                    {model.name}
+                    {model.isDefault && ' (Default)'}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                Choose the AI model for this session
+              </p>
+            </div>
+
+            {/* Skill Level for Existing Projects */}
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-3">
+                Your Technical Background
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {skillLevels.map((skill) => (
+                  <button
+                    key={skill.id}
+                    onClick={() => handleInputChange('skillLevel', skill.id)}
+                    className={`p-4 rounded-lg border transition-all duration-200 text-left ${
+                      formData.skillLevel === skill.id
+                        ? 'bg-blue-500/20 border-blue-500 text-blue-200'
+                        : 'bg-white/5 border-white/20 text-gray-300 hover:bg-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    <div className="font-medium text-sm">{skill.label}</div>
+                    <div className="text-xs opacity-80 mt-1">{skill.description}</div>
+                  </button>
+                ))}
+              </div>
+              {errors.skillLevel && (
+                <p className="text-red-400 text-sm mt-1">{errors.skillLevel}</p>
+              )}
+            </div>
+
+            {/* Spec Selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-3">
+                Select a Project to Continue
+              </label>
+              <SpecSelector 
+                socket={socket} 
+                onSelectSpec={handleSpecSelect}
+              />
+            </div>
+
+            {/* Continue Button */}
+            <div className="pt-4 flex justify-center">
+              <button
+                onClick={handleStart}
+                disabled={!selectedSpec || !formData.skillLevel}
+                className="w-full max-w-md bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
+              >
+                Continue with {selectedSpec?.projectName || 'Selected Project'}
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

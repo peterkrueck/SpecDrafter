@@ -116,19 +116,22 @@ function App() {
     // Start processes and send the initial message after a brief delay to ensure UI has transitioned
     setTimeout(() => {
       if (socket) {
-        // Start Discovery AI with the user's project details as the first message
-        socket.emit('start_processes', { 
-          modelId: formData.modelId,
-          initialMessage: initialMessage 
-        });
-        
-        const newMessage = {
-          id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          message: initialMessage,
-          isUser: true,
-          timestamp: new Date().toISOString()
-        };
-        setMessages([newMessage]);
+        if (initialMessage) {
+          // New project flow - Start Discovery AI with the user's project details as the first message
+          socket.emit('start_processes', { 
+            modelId: formData.modelId,
+            initialMessage: initialMessage 
+          });
+          
+          const newMessage = {
+            id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            message: initialMessage,
+            isUser: true,
+            timestamp: new Date().toISOString()
+          };
+          setMessages([newMessage]);
+        }
+        // For existing projects, the socket handler in WelcomeScreen already emitted 'start_with_existing_spec'
       }
     }, 300);
   };
