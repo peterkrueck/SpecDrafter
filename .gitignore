@@ -65,3 +65,7 @@ sessions/
 
 # Claude configuration
 .claude/
+
+# Project documentation (excluded as requested)
+CLAUDE.md
+REDDIT_POST.md
