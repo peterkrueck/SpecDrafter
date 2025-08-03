@@ -88,25 +88,25 @@ The application will open at:
 
 ```
 ┌─────────────────────────────── USER INTERFACE ───────────────────────────────┐
-│                                                                               │
+│                                                                              │
 │  ┌─────────────────────┐                    ┌──────────────────────────────┐ │
 │  │                     │                    │                              │ │
 │  │    CHAT PANEL       │                    │   COLLABORATION PANEL        │ │
 │  │                     │                    │                              │ │
-│  │  User ←→ Discovery  │                    │  ┌────────────────────────┐ │ │
-│  │                     │                    │  │  AI Collaboration Tab  │ │ │
-│  │  - Natural language │                    │  │                        │ │ │
-│  │  - Requirements     │                    │  │  Discovery ←→ Review   │ │ │
-│  │  - Q&A flow        │                    │  │  Real-time dialogue    │ │ │
-│  │                     │                    │  └────────────────────────┘ │ │
-│  │                     │                    │  ┌────────────────────────┐ │ │
-│  │  [Generate & Review │                    │  │  Specification Tab     │ │ │
-│  │   Spec Button]      │                    │  │                        │ │ │
-│  │                     │                    │  │  Live spec preview     │ │ │
-│  │                     │                    │  │  Markdown → HTML       │ │ │
-│  └──────────┬──────────┘                    │  └────────────────────────┘ │ │
+│  │  User ←→ Discovery  │                    │  ┌────────────────────────┐  │ │
+│  │                     │                    │  │  AI Collaboration Tab  │  │ │
+│  │  - Natural language │                    │  │                        │  │ │
+│  │  - Requirements     │                    │  │  Discovery ←→ Review   │  │ │
+│  │  - Q&A flow         │                    │  │  Real-time dialogue    │  │ │
+│  │                     │                    │  └────────────────────────┘  │ │
+│  │                     │                    │  ┌────────────────────────┐  │ │
+│  │  [Generate & Review │                    │  │  Specification Tab     │  │ │
+│  │   Spec Button]      │                    │  │                        │  │ │
+│  │                     │                    │  │  Live spec preview     │  │ │
+│  │                     │                    │  │  Markdown → HTML       │  │ │
+│  └──────────┬──────────┘                    │  └────────────────────────┘  │ │
 │             │                               └──────────────────────────────┘ │
-└─────────────┼─────────────────────────────────────────────────────────────────┘
+└─────────────┼────────────────────────────────────────────────────────────────┘
               │
               │ User message
               ▼
@@ -117,17 +117,17 @@ The application will open at:
 │                         │ ←───────────────── │                         │
 │ • Requirements focus    │   Auto-routed      │ • Technical analysis    │
 │ • User communication    │    responses       │ • Feasibility checks    │
-│ • Anti-over-engineering│                    │ • Architecture review   │
-│ • Spec drafting        │                    │ • No user interaction   │
+│ • Anti-over-engineering │                    │ • Architecture review   │
+│ • Spec drafting         │                    │ • No user interaction   │
 └────────────┬────────────┘                    └─────────────────────────┘
              │
              │ Final specification
              ▼
       ┌──────────────┐
       │ SPEC OUTPUT  │
-      │             │
-      │ specs/*/    │
-      │  spec.md    │
+      │              │
+      │ specs/*/     │
+      │  spec.md     │
       └──────────────┘
 ```
 
