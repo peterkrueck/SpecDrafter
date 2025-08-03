@@ -79,8 +79,8 @@ class DualProcessOrchestrator extends EventEmitter {
     if (data.type === 'assistant_response') {
       const textContent = data.content;
       
-      // Check for AI-to-AI communication markers
-      if (textContent.includes('@review:')) {
+      // Check for AI-to-AI communication markers at the start of the message
+      if (textContent.trimStart().startsWith('@review:')) {
         // Hide chat typing indicator since we're starting AI collaboration
         this.emit('hide_chat_typing', { speaker: 'Discovery AI' });
         // Show Discovery AI typing in collaboration panel
@@ -89,12 +89,25 @@ class DualProcessOrchestrator extends EventEmitter {
         return; // Don't emit regular message
       }
       
+      // Log if @review: appears but not at start (for safety)
+      if (textContent.includes('@review:') && !textContent.trimStart().startsWith('@review:')) {
+        this.logger.warn('⚠️ @review: detected but not at message start - routing to USER', {
+          position: textContent.indexOf('@review:'),
+          preview: textContent.substring(0, 100)
+        });
+      }
+      
       // Emit typing stopped for AI collaboration if we were in collaboration
       if (this.activeProcess === 'discovery' && this.collaborationState !== 'discovering') {
         this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
       }
       
-      // Emit to frontend
+      // Emit to frontend (this goes to users)
+      this.logger.info('📤 Sending message to USER via chat panel', {
+        contentLength: textContent.length,
+        preview: textContent.substring(0, 50) + (textContent.length > 50 ? '...' : '')
+      });
+      
       this.emit('discovery_message', {
         content: textContent,
         type: 'assistant',
@@ -333,17 +346,37 @@ Please revise the specification based on this feedback.`;
   }
 
   async handleAIToAICommunication(from, to, fullContent) {
-    // Extract the message after the marker
+    // Validate marker is at the start
+    const trimmedContent = fullContent.trimStart();
     const marker = `@${to}:`;
-    const markerIndex = fullContent.indexOf(marker);
-    const message = fullContent.substring(markerIndex + marker.length).trim();
+    
+    if (!trimmedContent.startsWith(marker)) {
+      this.logger.error('❌ AI-to-AI marker not at start of message, aborting routing', {
+        marker,
+        actualStart: trimmedContent.substring(0, 20),
+        from,
+        to
+      });
+      
+      // Emit the message to users instead since routing failed
+      this.emit('discovery_message', {
+        content: fullContent,
+        type: 'assistant',
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+    
+    // Extract the message after the marker
+    const message = trimmedContent.substring(marker.length).trim();
     
     this.logger.info('🤖↔️🤖 AI-to-AI communication detected', { 
       from, 
       to, 
       messageLength: message.length,
       marker,
-      fullContentLength: fullContent.length
+      fullContentLength: fullContent.length,
+      messagePreview: message.substring(0, 100) + (message.length > 100 ? '...' : '')
     });
     
     // Emit the AI-to-AI message for the collaboration tab
