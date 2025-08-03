@@ -9,6 +9,7 @@ class ClaudeSDKManager extends EventEmitter {
     this.role = role; // 'discovery' or 'review'
     this.workspacePath = workspacePath;
     this.currentQuery = null;
+    this.abortController = null; // Add AbortController for proper cancellation
     this.sessionId = null;
     this.hasSession = false;
     this.isRunning = false;
@@ -35,6 +36,9 @@ class ClaudeSDKManager extends EventEmitter {
     });
 
     try {
+      // Create new AbortController for this query
+      this.abortController = new AbortController();
+      
       const options = {
         cwd: this.workspacePath,
         model: this.currentModel,
@@ -42,6 +46,7 @@ class ClaudeSDKManager extends EventEmitter {
         permissionMode: 'bypassPermissions', // For automated process
         allowedTools: ['Read', 'Write', 'Edit', 'MultiEdit', 'Bash', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebSearch', 'Task'],
         maxTurns: 10,
+        abortController: this.abortController, // Pass AbortController to query
         stderr: (data) => {
           this.logger.error('Claude stderr', { data });
           this.emit('error', new Error(data));
@@ -99,14 +104,21 @@ class ClaudeSDKManager extends EventEmitter {
       
       this.logger.info(`processQuery: Completed, processed ${messageCount} messages`);
     } catch (error) {
-      this.logger.error('Error processing query', {
-        error: error.message,
-        stack: error.stack
-      });
-      this.emit('error', error);
+      // Handle AbortError specifically
+      if (error.name === 'AbortError') {
+        this.logger.info('Query was aborted by user');
+        this.emit('aborted');
+      } else {
+        this.logger.error('Error processing query', {
+          error: error.message,
+          stack: error.stack
+        });
+        this.emit('error', error);
+      }
     } finally {
       this.isRunning = false;
       this.currentQuery = null;
+      this.abortController = null;
       this.emit('exit', { code: 0, signal: null });
     }
   }
@@ -194,18 +206,17 @@ class ClaudeSDKManager extends EventEmitter {
   }
 
   async kill() {
-    if (!this.isRunning || !this.currentQuery) {
-      this.logger.debug('Kill called but query not running');
+    if (!this.isRunning || !this.abortController) {
+      this.logger.debug('Kill called but query not running or no abort controller');
       return;
     }
 
     try {
-      this.logger.info('Interrupting Claude query');
-      if (this.currentQuery.interrupt) {
-        await this.currentQuery.interrupt();
-      }
+      this.logger.info('Aborting Claude query');
+      // Use AbortController.abort() to properly cancel the query
+      this.abortController.abort();
     } catch (error) {
-      this.logger.error('Error interrupting Claude query', { 
+      this.logger.error('Error aborting Claude query', { 
         error: error.message 
       });
     }

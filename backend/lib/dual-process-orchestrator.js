@@ -483,6 +483,25 @@ Please revise the specification based on this feedback.`;
     await this.discoveryProcess.kill();
     await this.reviewProcess.kill();
   }
+
+  async stopAllProcesses() {
+    this.logger.info('Stopping all AI processes immediately');
+    
+    // Kill both processes
+    await this.discoveryProcess.kill();
+    await this.reviewProcess.kill();
+    
+    // Clear all typing indicators
+    this.emit('typing_indicator', { isTyping: false, speaker: 'Discovery AI' });
+    this.emit('typing_indicator', { isTyping: false, speaker: 'Review AI' });
+    this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
+    this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
+    
+    // Emit a confirmation event
+    this.emit('processes_stopped');
+    
+    this.logger.info('All processes stopped');
+  }
 }
 
 export default DualProcessOrchestrator;

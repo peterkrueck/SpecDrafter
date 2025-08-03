@@ -3,10 +3,11 @@ import Message from './Message';
 import TypingIndicator from './TypingIndicator';
 import { MODEL_STORAGE_KEY } from '../config/models.js';
 
-function ChatPanel({ messages, setMessages, typingState, socket, projectData, projectInfo, onResetSession, currentModel, availableModels }) {
+function ChatPanel({ messages, setMessages, typingState, collaborationTypingState, socket, projectData, projectInfo, onResetSession, currentModel, availableModels }) {
   const [inputValue, setInputValue] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isGeneratingSpec, setIsGeneratingSpec] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -51,8 +52,25 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, pr
     // Note: Review AI messages are no longer shown in chat
     // They are automatically routed to Discovery AI and appear in collaboration tab
 
+    // Handle AI stopped event
+    socket.on('ai_stopped', (data) => {
+      setIsStopping(false);
+      if (data.success) {
+        console.log('AI processes stopped successfully');
+      } else {
+        console.error('Failed to stop AI processes:', data.error);
+      }
+    });
+
+    // Handle processes stopped event
+    socket.on('processes_stopped', () => {
+      setIsStopping(false);
+    });
+
     return () => {
       socket.off('discovery_message');
+      socket.off('ai_stopped');
+      socket.off('processes_stopped');
     };
   }, [socket, setMessages]);
 
@@ -110,6 +128,7 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, pr
   // Logic to determine when Generate & Review button should be enabled
   const canGenerateSpec = socket?.connected && 
     !typingState.isTyping && 
+    !collaborationTypingState.isTyping && // Hide during AI collaboration
     messages.length > 0 && // Show after any conversation starts
     !isGeneratingSpec &&
     projectData && // Project data must exist
@@ -130,6 +149,13 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, pr
     
     // Reset loading state after a delay
     setTimeout(() => setIsGeneratingSpec(false), 3000);
+  };
+
+  const handleStopAI = () => {
+    if (socket && (typingState.isTyping || collaborationTypingState.isTyping) && !isStopping) {
+      setIsStopping(true);
+      socket.emit('stop_ai_response');
+    }
   };
 
   return (
@@ -230,11 +256,35 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, pr
           >
             Send
           </button>
-          {canGenerateSpec && (
+          {(typingState.isTyping || collaborationTypingState.isTyping) ? (
+            <button
+              onClick={handleStopAI}
+              disabled={isStopping}
+              className="px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 w-[180px] justify-center"
+              title={collaborationTypingState.isTyping ? "Stop AI collaboration" : "Stop AI response"}
+            >
+              {isStopping ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="hidden sm:inline">Stopping...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="6" width="12" height="12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  </svg>
+                  <span className="hidden sm:inline">Stop</span>
+                </>
+              )}
+            </button>
+          ) : canGenerateSpec ? (
             <button 
               onClick={handleGenerateSpec}
               disabled={!canGenerateSpec}
-              className="px-4 py-2 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-2 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 w-[180px] justify-center"
               title="Generate and review specification"
             >
               {isGeneratingSpec ? (
@@ -254,7 +304,7 @@ function ChatPanel({ messages, setMessages, typingState, socket, projectData, pr
                 </>
               )}
             </button>
-          )}
+          ) : null}
         </div>
       </div>
       

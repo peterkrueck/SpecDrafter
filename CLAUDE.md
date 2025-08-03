@@ -79,6 +79,7 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
   - `reset_session`: Clear and restart
   - `change_model`: Switch between Claude 4 models (Opus/Sonnet)
   - `get_available_models`: Request list of available models
+  - `stop_ai_response`: Immediately stop both AI processes
   
 - **Server → Client**: 
   - `discovery_message`: Messages from Discovery AI
@@ -92,6 +93,8 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
   - `processes_ready`: Claude instances initialized
   - `available_models`: List of available Claude models
   - `model_changed`: Confirmation of model change
+  - `ai_stopped`: Confirmation that AI processes were stopped
+  - `processes_stopped`: Event fired when all processes have been terminated
 
 #### 4. React Component Hierarchy
 ```
@@ -101,6 +104,7 @@ App.jsx
 ├── ChatPanel.jsx (left panel)
 │   ├── Message.jsx (with speaker identification)
 │   ├── TypingIndicator.jsx
+│   ├── Stop Button (appears when AI is typing, allows immediate termination)
 │   └── Generate & Review Spec Button (triggers automated workflow)
 └── CollaborationPanel.jsx (right panel)
     ├── CollaborationView.jsx
@@ -292,6 +296,11 @@ SpecDrafter/
 - Auto-reconnection built-in for resilience
 - Each Claude process maintains stateful conversations
 - Session IDs preserved for conversation continuity
+- **Stop Button**: Users can immediately terminate both AI processes mid-response
+  - Appears only when AI is actively typing
+  - Uses AbortController to cleanly cancel Claude SDK queries
+  - Clears all typing indicators in both panels
+  - Allows immediate user input without waiting
 
 ### Styling Approach
 - Tailwind CSS with FreigeistAI-inspired design
@@ -315,6 +324,10 @@ SpecDrafter/
 - Sessions persist using `resume` option with session IDs
 - Each Claude instance maintains independent session state
 - Graceful process lifecycle management with proper cleanup
+- **AbortController Integration**: Proper cancellation support for Claude SDK queries
+  - Each query gets its own AbortController instance
+  - Clean termination without leaving hanging processes
+  - Handles AbortError gracefully in catch blocks
 
 ### Error Handling
 - SDK errors propagated through EventEmitter pattern

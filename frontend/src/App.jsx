@@ -94,6 +94,14 @@ function App() {
       // Don't auto-switch view for updates, user might be reading collaboration panel
     });
 
+    socket.on('processes_stopped', () => {
+      console.log('Processes stopped');
+      // Typing states should already be cleared by the typing_indicator events
+      // This is just for additional confirmation
+      setTypingState({ isTyping: false, speaker: '' });
+      setCollaborationTypingState({ isTyping: false, speaker: '' });
+    });
+
     return () => {
       socket.off('orchestrator_status');
       socket.off('processes_ready');
@@ -106,6 +114,7 @@ function App() {
       socket.off('available_models');
       socket.off('project_info');
       socket.off('model_changed');
+      socket.off('processes_stopped');
     };
   }, [socket]);
 
@@ -156,6 +165,7 @@ function App() {
           messages={messages}
           setMessages={setMessages}
           typingState={typingState}
+          collaborationTypingState={collaborationTypingState}
           socket={socket}
           projectData={projectData}
           projectInfo={projectInfo}
