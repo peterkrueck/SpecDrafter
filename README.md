@@ -94,7 +94,7 @@ The application will open at:
 │  │    CHAT PANEL       │                    │   COLLABORATION PANEL        │ │
 │  │                     │                    │                              │ │
 │  │  User ←→ Discovery  │                    │  ┌────────────────────────┐  │ │
-│  │                     │                    │  │  AI Collaboration Tab  │  │ │
+│  │                     │                    │  │  AI Dialogue Tab       │  │ │
 │  │  - Natural language │                    │  │                        │  │ │
 │  │  - Requirements     │                    │  │  Discovery ←→ Review   │  │ │
 │  │  - Q&A flow         │                    │  │  Real-time dialogue    │  │ │
