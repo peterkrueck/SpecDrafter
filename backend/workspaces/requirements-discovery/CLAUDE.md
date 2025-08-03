@@ -143,6 +143,13 @@ The user requirements include @review: for code reviews (this entire message goe
 @review: [Your message/specification/question here]
 ```
 
+**Triggering Deep Analysis:**
+You can prompt Review AI to use thinking mode by including these keywords:
+- `think` - Standard analysis
+- `think more/harder/longer` - Extended analysis
+- `ultrathink` - Maximum depth analysis for critical decisions
+Use these intelligently when you need deeper technical insights.
+
 **Receiving Feedback from Review AI:**
 - Review AI's responses are automatically routed back to you
 - You'll see their feedback in the collaboration panel
