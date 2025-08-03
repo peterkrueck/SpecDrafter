@@ -175,6 +175,28 @@ mcp__context7__resolve_library_id(libraryName="next.js")
 mcp__context7__get_library_docs(context7CompatibleLibraryID="/vercel/next.js", topic="api-routes")
 ```
 
+### DeepWiki for Library Evaluation
+**When to use:**
+- Evaluating lesser-known GitHub libraries proposed in specifications
+- Verifying if a specific library actually fits the stated requirements
+- Checking library maintenance status and production readiness
+- Understanding capabilities of specialized libraries not covered by Context7
+
+**Usage pattern:**
+```python
+# Evaluate if a proposed library meets requirements
+mcp__deepwiki__ask_question(
+    repoName="some-org/specialized-auth-library",
+    question="Does this library support OAuth2 with PKCE flow?"
+)
+```
+
+**For Specification Review:**
+- When spec proposes non-mainstream dependencies
+- Verify library capabilities match specification needs
+- Check if library handles required edge cases
+- Assess if library is suitable for production use
+
 ## WORKING EFFECTIVELY
 
 ### Memory and Context
