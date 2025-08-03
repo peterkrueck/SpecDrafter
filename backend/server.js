@@ -258,6 +258,24 @@ Please read this specification file to understand the project. Keep in mind the 
     logger.debug('Session reset complete');
   });
 
+  // Handle stop AI response
+  socket.on('stop_ai_response', async () => {
+    logger.info('Stop AI response requested');
+    
+    if (orchestrator) {
+      try {
+        await orchestrator.stopAllProcesses();
+        socket.emit('ai_stopped', { success: true });
+        logger.info('AI processes stopped successfully');
+      } catch (error) {
+        logger.error('Failed to stop AI processes', { error: error.message });
+        socket.emit('ai_stopped', { success: false, error: error.message });
+      }
+    } else {
+      socket.emit('ai_stopped', { success: false, error: 'Orchestrator not initialized' });
+    }
+  });
+
   socket.on('disconnect', () => {
     const remainingClients = io.engine.clientsCount - 1;
     logger.info('Client disconnected', { socketId: socket.id, remainingClients });
@@ -350,6 +368,11 @@ function setupOrchestratorHandlers() {
   orchestrator.on('typing_indicator', (data) => {
     logger.info('Typing indicator from orchestrator', { speaker: data.speaker, isTyping: data.isTyping });
     io.emit('typing_indicator', data);
+  });
+  
+  orchestrator.on('processes_stopped', () => {
+    logger.info('Processes stopped event from orchestrator');
+    io.emit('processes_stopped');
   });
 }
 
