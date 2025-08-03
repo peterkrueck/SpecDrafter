@@ -1,6 +1,6 @@
 # SpecDrafter
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE.md)
 [![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 [![Claude SDK](https://img.shields.io/badge/Claude%20SDK-Latest-blue)](https://github.com/anthropics/claude-code)
 
@@ -302,7 +302,7 @@ npm run preview  # Test production build
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+Apache License 2.0 - see [LICENSE.md](LICENSE.md) for details.
 
 ## Acknowledgments
 
