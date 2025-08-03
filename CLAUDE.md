@@ -119,9 +119,9 @@ App.jsx
 5. Frontend displays in chat panel
 
 **AI-to-AI Communication:**
-1. AI includes `@review:` or `@discovery:` marker in response
-2. Orchestrator detects marker and extracts message content
-3. Message routed to target AI via ClaudeSDKManager
+1. Discovery AI starts message with `@review:` marker (must be at beginning)
+2. Orchestrator validates marker position and extracts message content
+3. Message routed to Review AI via ClaudeSDKManager
 4. `ai_collaboration_message` event emitted to frontend
 5. CollaborationView displays real-time AI conversation
 
@@ -129,11 +129,11 @@ App.jsx
 The system implements autonomous AI-to-AI communication:
 
 **Communication Flow:**
-- `@review:` - Discovery AI sends messages to Review AI
+- `@review:` - Discovery AI sends messages to Review AI (must start the message)
 - Review AI responses are automatically routed back to Discovery AI (no markers needed)
 
 **Message Routing:**
-1. Discovery AI includes `@review:` marker to send messages to Review AI
+1. Discovery AI starts message with `@review:` marker to route to Review AI
 2. Content after marker is extracted and forwarded to Review AI
 3. ALL Review AI output is automatically routed to Discovery AI via `ai_collaboration_message`
 4. Review AI operates as a backend service with no direct user interaction
@@ -141,7 +141,8 @@ The system implements autonomous AI-to-AI communication:
 
 **Implementation Details:**
 - Review AI uses lazy initialization - starts only when first needed
-- `handleAIToAICommunication()` manages Discovery→Review routing
+- `handleAIToAICommunication()` validates @review: is at message start for safety
+- Messages with @review: mid-text are routed to users instead
 - `handleReviewOutput()` automatically routes all Review output to Discovery
 - All AI-to-AI communication is logged and displayed in collaboration tab
 
@@ -331,7 +332,9 @@ SpecDrafter/
 - If messages don't appear: Check event name matching (discovery_message/ai_collaboration_message)
 - If Claude doesn't respond: Verify SDK installation and credentials
 - If sessions don't persist: Check session ID handling in ClaudeSDKManager
-- If AI-to-AI communication fails: Check marker parsing in handleAIToAICommunication
+- If AI-to-AI communication fails: 
+  - Check @review: marker is at the start of the message
+  - Verify handleAIToAICommunication validation (markers mid-message are ignored)
 - If spec files don't appear: 
   - Check file watcher is monitoring correct path (should be `specs/**/*.md` from project root)
   - Verify Discovery AI uses the full paths provided in messages
