@@ -4,7 +4,7 @@
 [![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
 [![Claude SDK](https://img.shields.io/badge/Claude%20SDK-Latest-blue)](https://github.com/anthropics/claude-code)
 
-An AI collaboration platform that revolutionizes technical specification writing through dual-Claude architecture, ensuring you build the right thing before you write a single line of code.
+An AI collaboration platform that helps technical specification writing through dual-Claude architecture, ensuring you build the right thing before you write a single line of code.
 
 > **SpecDrafter** - Where two AI minds collaborate to transform your ideas into crystal-clear technical specifications.
 
@@ -14,7 +14,7 @@ An AI collaboration platform that revolutionizes technical specification writing
 
 Building software without clear specifications is like constructing a house without blueprints. SpecDrafter ensures you build the right thing from the start.
 
-### The Problem: 90% of Software Projects Fail at Requirements
+### The Problem: AI Coding tools performs much better with clear specifications
 
 ```
 ❌ Requirements get lost in translation between stakeholders and developers
@@ -32,7 +32,8 @@ Building software without clear specifications is like constructing a house with
 | **Discovery AI** 🔵 | • Talks to humans naturally<br>• Challenges assumptions<br>• Anti-over-engineering built-in | Gets to what users ACTUALLY need, not what they think they want |
 | **Review AI** 🔴 | • Technical reality checks<br>• Feasibility analysis<br>• Architecture validation | Catches problems before you write code |
 
-**The Magic:** Watch them collaborate in real-time through the `@review:` protocol - Discovery drafts, Review validates, together they refine until you have a specification that's both user-focused AND technically sound.
+**The Magic:** Watch them collaborate in real-time - Discovery drafts, Review validates, together they refine until you have a specification that's both user-focused AND technically sound.
+
 
 ### 🎉 The Result
 
@@ -80,22 +81,6 @@ The application will open at:
 - Frontend: http://localhost:3001
 - Backend: http://localhost:3002
 
-### First Run
-
-1. **Choose Your Path**:
-   - 🆕 **New Project**: Start fresh with your project idea
-   - 📂 **Existing Project**: Continue working on a previous specification
-
-2. **Set Your Technical Level**:
-   - 👤 **Non-Tech**: Business-focused explanations
-   - 💻 **Tech-Savvy**: Balanced technical details
-   - 🚀 **Software Professional**: Deep technical discussions
-
-3. **Start Collaborating**:
-   - Chat naturally with Discovery AI about your project
-   - Click "Generate & Review Spec" when ready
-   - Watch the AIs collaborate in real-time
-   - Download your specification when complete
 
 ## Architecture
 
@@ -146,62 +131,6 @@ The application will open at:
       └──────────────┘
 ```
 
-### Technology Stack
-
-**Frontend**:
-- React 18 + Vite (lightning-fast development)
-- Tailwind CSS (beautiful glassmorphism UI)
-- Socket.IO Client (real-time communication)
-
-**Backend**:
-- Node.js + Express (ES modules)
-- Socket.IO Server (WebSocket magic)
-- Claude SDK (official Anthropic integration)
-- Chokidar (file system monitoring)
-
-### Key Components
-
-#### 1. Dual Process Orchestrator
-Manages the complex dance between Discovery and Review AIs:
-- State management (discovering → drafting → reviewing → refining)
-- Message routing with @review: protocol
-- Session persistence and recovery
-
-#### 2. Claude SDK Manager
-Sophisticated AI instance management:
-- Dynamic model switching (Opus/Sonnet)
-- Session continuity with resume capability
-- Proper cancellation with AbortController
-- Tool configuration per AI role
-
-#### 3. Real-time Communication Layer
-WebSocket-powered collaboration:
-- Live typing indicators for both AIs
-- Instant message delivery
-- File change detection and broadcasting
-- Multi-client support
-
-## Common Tasks
-
-### Starting a New Project
-
-```javascript
-// 1. User provides project overview
-"I need a task management app for remote teams"
-
-// 2. Discovery AI explores requirements
-"What's the main pain point for your remote teams?"
-
-// 3. Click "Generate & Review Spec"
-// 4. Watch AIs collaborate
-// 5. Download comprehensive specification
-```
-
-### Continuing an Existing Project
-
-1. Select "Continue Existing Project" on welcome screen
-2. Choose your specification from the list
-3. Pick up where you left off with full context
 
 ### Customizing AI Behavior
 
@@ -226,49 +155,6 @@ BACKEND_PORT=3002
 
 # Optional: Enable debug logging
 DEBUG=true
-```
-
-## Development
-
-### Project Structure
-
-```
-SpecDrafter/
-├── frontend/                    # React application
-│   ├── src/
-│   │   ├── components/         # UI components
-│   │   ├── hooks/              # Custom React hooks
-│   │   └── App.jsx             # Main application
-│   └── vite.config.js          # Build configuration
-├── backend/                     # Node.js server
-│   ├── server.js               # Express + Socket.IO
-│   ├── lib/                    # Core libraries
-│   │   ├── claude-sdk-manager.js
-│   │   ├── dual-process-orchestrator.js
-│   │   └── file-watcher.js
-│   └── workspaces/             # AI configurations
-│       ├── requirements-discovery/
-│       └── technical-review/
-├── specs/                      # Generated specifications
-└── package.json                # Dependencies
-```
-
-### Running in Development
-
-```bash
-# Start both frontend and backend with hot reload
-npm run dev
-
-# Or run separately:
-npm run frontend  # Start frontend only
-npm run server    # Start backend only
-```
-
-### Building for Production
-
-```bash
-npm run build
-npm run preview  # Test production build
 ```
 
 ## Best Practices
@@ -315,8 +201,10 @@ Apache License 2.0 - see [LICENSE.md](LICENSE.md) for details.
 
 - Built with [Claude Code SDK](https://github.com/anthropics/claude-code)
 - Inspired by the need for better requirements engineering
-- UI design influenced by FreigeistAI aesthetics
+- UI design inspired by [Freigeist.dev](https://www.freigeist.dev) aesthetics
 
 ---
 
 **Remember**: The best code is the code you don't have to write because you built the right thing the first time. 🎯
+
+Feel free to contact me on LinkedIn: https://www.linkedin.com/in/peterkrueck/
