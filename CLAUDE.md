@@ -72,6 +72,8 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
 - **Client → Server**: 
   - `user_message`: User chat messages
   - `start_processes`: Initialize Discovery AI with optional `initialMessage` parameter (sent when user submits welcome form)
+  - `list_specs`: Request list of existing specifications
+  - `start_with_existing_spec`: Start session with existing spec (includes projectName, modelId, skillLevel)
   - `switch_process`: Switch active AI (Discovery only - cannot switch to Review)
   - `trigger_review`: Initiate specification review
   - `reset_session`: Clear and restart
@@ -85,6 +87,7 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
   - `collaboration_detected`: AI-to-AI interaction events
   - `spec_file_generated`: New specification created
   - `spec_file_updated`: Existing specification modified
+  - `specs_list`: List of available specifications
   - `orchestrator_status`: Current system state
   - `processes_ready`: Claude instances initialized
   - `available_models`: List of available Claude models
@@ -93,6 +96,8 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
 #### 4. React Component Hierarchy
 ```
 App.jsx
+├── WelcomeScreen.jsx (with mode toggle)
+│   └── SpecSelector.jsx (for existing project mode)
 ├── ChatPanel.jsx (left panel)
 │   ├── Message.jsx (with speaker identification)
 │   ├── TypingIndicator.jsx
@@ -105,11 +110,17 @@ App.jsx
 ### Message Flow
 
 **Initialization Flow:**
-1. User fills welcome form with project details
-2. On submit, frontend emits `start_processes` with user's project info as `initialMessage`
-3. Server starts Discovery AI using project details as first prompt
-4. Discovery AI's first response directly addresses the user's specific project
-5. Session continues with contextual understanding from the start
+1. User chooses between "Start New Project" or "Continue Existing Project"
+2. For new projects:
+   - User fills welcome form with project details and technical background
+   - On submit, frontend emits `start_processes` with user's project info as `initialMessage`
+   - Server starts Discovery AI using project details as first prompt
+3. For existing projects:
+   - User selects technical background and chooses from available specifications
+   - Frontend emits `start_with_existing_spec` with projectName, modelId, and skillLevel
+   - Discovery AI receives spec file path and user's technical background
+4. Discovery AI adapts communication style based on technical background (Non-Tech, Tech-Savvy, or Software Professional)
+5. Session continues with contextual understanding
 
 **User-to-AI Communication:**
 1. User sends message via ChatPanel
@@ -201,7 +212,8 @@ The file watcher monitors the `specs/` directory for markdown files:
 **Important Behavior**:
 - **Single Spec Display**: System shows only ONE specification at a time
 - **Last Updated Wins**: Most recently created/modified spec is displayed
-- **No File Selection UI**: Cannot switch between multiple specs
+- **Continue Existing Projects**: Users can now select and continue working on existing specifications
+- **Technical Background Adaptation**: Discovery AI adapts communication style based on user's technical level
 - **Automatic Detection**: All changes detected in real-time via WebSocket
 
 ## Important Development Notes
