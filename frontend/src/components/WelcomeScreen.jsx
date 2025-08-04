@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllModels, getDefaultModel, MODEL_STORAGE_KEY } from '../config/models.js';
+import { getAllModels, getDefaultModel, MODEL_STORAGE_KEY, LAST_CUSTOM_MODEL_KEY } from '../config/models.js';
 import SpecSelector from './SpecSelector';
 import { FileText, Plus } from 'lucide-react';
 
@@ -17,11 +17,36 @@ function WelcomeScreen({ onStart, socket }) {
     modelId: ''
   });
   
+  // Custom model state
+  const [isCustomModel, setIsCustomModel] = useState(false);
+  const [customModelName, setCustomModelName] = useState('');
+  const [customModelId, setCustomModelId] = useState('');
+  
   // Load saved model preference on mount
   useEffect(() => {
     const savedModelId = localStorage.getItem(MODEL_STORAGE_KEY);
-    const initialModelId = savedModelId && models.find(m => m.id === savedModelId) ? savedModelId : defaultModel.id;
-    setFormData(prev => ({ ...prev, modelId: initialModelId }));
+    
+    // Check if it was a custom model
+    if (savedModelId === 'custom') {
+      const lastCustom = localStorage.getItem(LAST_CUSTOM_MODEL_KEY);
+      if (lastCustom) {
+        try {
+          const { name, id } = JSON.parse(lastCustom);
+          setIsCustomModel(true);
+          setCustomModelName(name || '');
+          setCustomModelId(id || '');
+          setFormData(prev => ({ ...prev, modelId: id }));
+        } catch (e) {
+          // If parsing fails, use default
+          setFormData(prev => ({ ...prev, modelId: defaultModel.id }));
+        }
+      } else {
+        setFormData(prev => ({ ...prev, modelId: defaultModel.id }));
+      }
+    } else {
+      const initialModelId = savedModelId && models.find(m => m.id === savedModelId) ? savedModelId : defaultModel.id;
+      setFormData(prev => ({ ...prev, modelId: initialModelId }));
+    }
   }, []);
 
   const [errors, setErrors] = useState({});
@@ -49,8 +74,15 @@ function WelcomeScreen({ onStart, socket }) {
     
     // If model changed, update it immediately
     if (field === 'modelId' && socket) {
-      socket.emit('change_model', { modelId: value });
-      localStorage.setItem(MODEL_STORAGE_KEY, value);
+      if (value === 'custom') {
+        setIsCustomModel(true);
+        localStorage.setItem(MODEL_STORAGE_KEY, 'custom');
+        // Don't emit change yet, wait for custom ID
+      } else {
+        setIsCustomModel(false);
+        socket.emit('change_model', { modelId: value });
+        localStorage.setItem(MODEL_STORAGE_KEY, value);
+      }
     }
   };
 
@@ -76,6 +108,16 @@ function WelcomeScreen({ onStart, socket }) {
       }
       if (!formData.skillLevel) {
         newErrors.skillLevel = 'Please select your skill level';
+      }
+    }
+    
+    // Validate custom model if selected
+    if (isCustomModel) {
+      if (!customModelName.trim()) {
+        newErrors.customModelName = 'Please provide a name for your custom model';
+      }
+      if (!customModelId.trim()) {
+        newErrors.customModelId = 'Please provide the model ID';
       }
     }
 
@@ -120,6 +162,28 @@ I want to create this project. Please help me draft comprehensive specifications
 
   const handleSpecSelect = (spec) => {
     setSelectedSpec(spec);
+  };
+
+  const handleCustomModelChange = (field, value) => {
+    if (field === 'name') {
+      setCustomModelName(value);
+      // Update localStorage with current ID if we have it
+      if (customModelId) {
+        localStorage.setItem(LAST_CUSTOM_MODEL_KEY, JSON.stringify({ name: value, id: customModelId }));
+      }
+    } else if (field === 'id') {
+      setCustomModelId(value);
+      // Update the form data with custom ID
+      if (value) {
+        setFormData(prev => ({ ...prev, modelId: value }));
+        // Save custom model info
+        localStorage.setItem(LAST_CUSTOM_MODEL_KEY, JSON.stringify({ name: customModelName, id: value }));
+        // Emit change if socket available
+        if (socket) {
+          socket.emit('change_model', { modelId: value });
+        }
+      }
+    }
   };
 
   return (
@@ -186,16 +250,64 @@ I want to create this project. Please help me draft comprehensive specifications
                 AI Model
               </label>
               <select
-                value={formData.modelId}
+                value={isCustomModel ? 'custom' : formData.modelId}
                 onChange={(e) => handleInputChange('modelId', e.target.value)}
                 className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
               >
                 {models.map((model) => (
                   <option key={model.id} value={model.id} className="bg-gray-900">
                     {model.name}
+                    {model.description && model.id !== 'custom' && ` - ${model.description}`}
                   </option>
                 ))}
               </select>
+              
+              {/* Custom Model Fields */}
+              {isCustomModel && (
+                <div className="mt-3 space-y-3 p-4 bg-white/5 rounded-lg border border-white/10">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">
+                      Custom Model Name
+                    </label>
+                    <input
+                      type="text"
+                      value={customModelName}
+                      onChange={(e) => handleCustomModelChange('name', e.target.value)}
+                      placeholder="e.g., Sonnet 4.0"
+                      className={`w-full bg-white/5 border rounded px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                        errors.customModelName 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-white/20 focus:ring-blue-500'
+                      }`}
+                    />
+                    {errors.customModelName && (
+                      <p className="text-red-400 text-xs mt-1">{errors.customModelName}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">
+                      Model ID
+                    </label>
+                    <input
+                      type="text"
+                      value={customModelId}
+                      onChange={(e) => handleCustomModelChange('id', e.target.value)}
+                      placeholder="e.g., claude-sonnet-4-20250514"
+                      className={`w-full bg-white/5 border rounded px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                        errors.customModelId 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-white/20 focus:ring-blue-500'
+                      }`}
+                    />
+                    {errors.customModelId && (
+                      <p className="text-red-400 text-xs mt-1">{errors.customModelId}</p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      Find model IDs in Anthropic's documentation
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -292,20 +404,67 @@ I want to create this project. Please help me draft comprehensive specifications
                 AI Model
               </label>
               <select
-                value={formData.modelId}
+                value={isCustomModel ? 'custom' : formData.modelId}
                 onChange={(e) => handleInputChange('modelId', e.target.value)}
                 className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
               >
                 {models.map(model => (
                   <option key={model.id} value={model.id} className="bg-gray-800">
                     {model.name}
-                    {model.isDefault && ' (Default)'}
+                    {model.description && model.id !== 'custom' && ` - ${model.description}`}
                   </option>
                 ))}
               </select>
               <p className="text-xs text-gray-400 mt-1">
                 Choose the AI model for this session
               </p>
+              
+              {/* Custom Model Fields */}
+              {isCustomModel && (
+                <div className="mt-3 space-y-3 p-4 bg-white/5 rounded-lg border border-white/10">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">
+                      Custom Model Name
+                    </label>
+                    <input
+                      type="text"
+                      value={customModelName}
+                      onChange={(e) => handleCustomModelChange('name', e.target.value)}
+                      placeholder="e.g., Sonnet 4.0"
+                      className={`w-full bg-white/5 border rounded px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                        errors.customModelName 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-white/20 focus:ring-blue-500'
+                      }`}
+                    />
+                    {errors.customModelName && (
+                      <p className="text-red-400 text-xs mt-1">{errors.customModelName}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">
+                      Model ID
+                    </label>
+                    <input
+                      type="text"
+                      value={customModelId}
+                      onChange={(e) => handleCustomModelChange('id', e.target.value)}
+                      placeholder="e.g., claude-sonnet-4-20250514"
+                      className={`w-full bg-white/5 border rounded px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                        errors.customModelId 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-white/20 focus:ring-blue-500'
+                      }`}
+                    />
+                    {errors.customModelId && (
+                      <p className="text-red-400 text-xs mt-1">{errors.customModelId}</p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      Find model IDs in Anthropic's documentation
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Skill Level for Existing Projects */}
