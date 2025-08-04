@@ -1,23 +1,36 @@
 // Available Claude models configuration
+// Using aliases for automatic updates to latest versions
 export const CLAUDE_MODELS = {
-  OPUS_4: {
-    id: 'claude-opus-4-20250514',
-    name: 'Claude 4 Opus',
+  OPUS: {
+    id: 'opus',
+    name: 'Claude Opus',
     description: 'Best for complex reasoning and detailed analysis',
-    command: 'opus'
-  },
-  SONNET_4: {
-    id: 'claude-sonnet-4-20250514',
-    name: 'Claude 4 Sonnet',
-    description: 'Balanced performance and speed',
-    command: 'sonnet',
+    command: 'opus',
     isDefault: true
+  },
+  SONNET: {
+    id: 'sonnet',
+    name: 'Claude Sonnet',
+    description: 'Balanced performance and speed',
+    command: 'sonnet'
+  },
+  HAIKU: {
+    id: 'haiku',
+    name: 'Claude Haiku',
+    description: 'Fast and efficient for simpler tasks',
+    command: 'haiku'
+  },
+  CUSTOM: {
+    id: 'custom',
+    name: 'Custom Model',
+    description: 'Advanced: Use a specific model version',
+    isCustom: true
   }
 };
 
 // Get default model
 export const getDefaultModel = () => {
-  return Object.values(CLAUDE_MODELS).find(model => model.isDefault) || CLAUDE_MODELS.SONNET_4;
+  return Object.values(CLAUDE_MODELS).find(model => model.isDefault) || CLAUDE_MODELS.OPUS;
 };
 
 // Get model by ID
