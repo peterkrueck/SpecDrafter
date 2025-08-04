@@ -48,12 +48,26 @@ class DualProcessOrchestrator extends EventEmitter {
 
     this.discoveryProcess.on('error', (error) => {
       this.logger.error('Discovery process error', { error: error.message });
+      // Clear typing indicators on error
+      this.emit('typing_indicator', { isTyping: false, speaker: 'Discovery AI' });
+      this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
       this.emit('error', { process: 'discovery', error });
     });
 
     this.discoveryProcess.on('exit', (exitInfo) => {
       this.logger.warn('Discovery process exited', exitInfo);
+      // Clear typing indicators on exit
+      this.emit('typing_indicator', { isTyping: false, speaker: 'Discovery AI' });
+      this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
       this.emit('process_exit', { process: 'discovery', ...exitInfo });
+    });
+
+    // Add handler for abort
+    this.discoveryProcess.on('aborted', () => {
+      this.logger.info('Discovery process aborted');
+      // Clear typing indicators on abort
+      this.emit('typing_indicator', { isTyping: false, speaker: 'Discovery AI' });
+      this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
     });
 
     // Review process handlers
@@ -63,12 +77,23 @@ class DualProcessOrchestrator extends EventEmitter {
 
     this.reviewProcess.on('error', (error) => {
       this.logger.error('Review process error', { error: error.message });
+      // Clear typing indicators on error
+      this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
       this.emit('error', { process: 'review', error });
     });
 
     this.reviewProcess.on('exit', (exitInfo) => {
       this.logger.warn('Review process exited', exitInfo);
+      // Clear typing indicators on exit
+      this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
       this.emit('process_exit', { process: 'review', ...exitInfo });
+    });
+
+    // Add handler for abort
+    this.reviewProcess.on('aborted', () => {
+      this.logger.info('Review process aborted');
+      // Clear typing indicators on abort
+      this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
     });
   }
 
