@@ -115,23 +115,46 @@ class DualProcessOrchestrator extends EventEmitter {
         timestamp: new Date().toISOString()
       });
       
-      // Check for AI-to-AI communication markers at the start of the message
-      if (textContent.trimStart().startsWith('@review:')) {
+      // Check for @review: marker anywhere in the message
+      const reviewMarkerIndex = textContent.indexOf('@review:');
+      
+      if (reviewMarkerIndex !== -1) {
+        // Split the message: before @review: goes to user, after goes to Review AI
+        const beforeReview = textContent.substring(0, reviewMarkerIndex).trim();
+        const afterReview = textContent.substring(reviewMarkerIndex);
+        
+        this.logger.info('🔄 @review: marker found, splitting message', {
+          markerPosition: reviewMarkerIndex,
+          beforeLength: beforeReview.length,
+          afterLength: afterReview.length
+        });
+        
+        // If there's content before @review:, send it to the user first
+        if (beforeReview.length > 0) {
+          this.logger.info('📤 Sending pre-review content to USER', {
+            contentLength: beforeReview.length,
+            preview: beforeReview.substring(0, 50) + (beforeReview.length > 50 ? '...' : '')
+          });
+          
+          this.emit('discovery_message', {
+            content: beforeReview,
+            type: 'assistant',
+            metadata: data.metadata,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
         // Hide chat typing indicator since we're starting AI collaboration
         this.emit('hide_chat_typing', { speaker: 'Discovery AI' });
         // Show Discovery AI typing in collaboration panel
         this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Discovery AI' });
-        this.handleAIToAICommunication('discovery', 'review', textContent);
-        return; // Don't emit regular message
+        
+        // Send everything from @review: onward to Review AI
+        this.handleAIToAICommunication('discovery', 'review', afterReview);
+        return;
       }
       
-      // Log if @review: appears but not at start (for safety)
-      if (textContent.includes('@review:') && !textContent.trimStart().startsWith('@review:')) {
-        this.logger.warn('⚠️ @review: detected but not at message start - routing to USER', {
-          position: textContent.indexOf('@review:'),
-          preview: textContent.substring(0, 100)
-        });
-      }
+      // No @review: marker found, emit entire message to user
       
       // Emit typing stopped for AI collaboration if we were in collaboration
       if (this.activeProcess === 'discovery' && this.collaborationState !== 'discovering') {
@@ -394,29 +417,22 @@ Please revise the specification based on this feedback.`;
   }
 
   async handleAIToAICommunication(from, to, fullContent) {
-    // Validate marker is at the start
-    const trimmedContent = fullContent.trimStart();
+    // Extract the message after the marker (we know it starts with @review: from the caller)
     const marker = `@${to}:`;
+    const markerIndex = fullContent.indexOf(marker);
     
-    if (!trimmedContent.startsWith(marker)) {
-      this.logger.error('❌ AI-to-AI marker not at start of message, aborting routing', {
+    if (markerIndex === -1) {
+      this.logger.error('❌ AI-to-AI marker not found in message', {
         marker,
-        actualStart: trimmedContent.substring(0, 20),
         from,
-        to
-      });
-      
-      // Emit the message to users instead since routing failed
-      this.emit('discovery_message', {
-        content: fullContent,
-        type: 'assistant',
-        timestamp: new Date().toISOString()
+        to,
+        contentPreview: fullContent.substring(0, 50)
       });
       return;
     }
     
     // Extract the message after the marker
-    const message = trimmedContent.substring(marker.length).trim();
+    const message = fullContent.substring(markerIndex + marker.length).trim();
     
     this.logger.info('🤖↔️🤖 AI-to-AI communication detected', { 
       from, 
