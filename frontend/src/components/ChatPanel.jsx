@@ -143,7 +143,7 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
     const projectName = projectData?.projectName || 'UnknownProject';
     
     // Send the predefined message to Discovery AI with dynamic path
-    const message = `Write the complete technical specification to the markdown file at ${projectInfo.specsDir}/${projectName}/spec.md. Focus on implementation details, technical architecture, data models, API endpoints, component structure, and integration points. Avoid timelines, budgets, or unnecessary fluff - concentrate only on the technical aspects of how to build it. After writing, ask @review: to check the file for any missing technical details, implementation gaps, or architectural improvements needed, ending your review request with the word ultrathink. ultrathink`;
+    const message = `Write the complete technical specification to the markdown file at ${projectInfo.specsDir}/${projectName}/spec.md. Start with the project's core idea/concept, list the core features that define the product, specify the target platform(s) (web, mobile, desktop, etc.), and describe the main theme/styling approach. Then provide implementation details including technical architecture, data models, API endpoints, component structure, and integration points. Avoid timelines, budgets, or unnecessary fluff - concentrate only on the technical aspects of how to build it. After writing, ask @review: to check the file for any missing foundational elements (core idea, features, platform, styling) as well as technical details, implementation gaps, or architectural improvements needed, ending your review request with the word ultrathink. ultrathink`;
     
     socket.emit('user_message', { message });
     
