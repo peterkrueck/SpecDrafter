@@ -32,6 +32,10 @@ class DualProcessOrchestrator extends EventEmitter {
     this.collaborationState = 'discovering'; // discovering → drafting → reviewing → refining
     this.currentSpecDraft = null;
     
+    // Conversation history tracking
+    this.conversationHistory = [];
+    this.hasReviewBeenTriggered = false;
+    
     // Setup event handlers
     this.setupProcessHandlers();
   }
@@ -78,6 +82,13 @@ class DualProcessOrchestrator extends EventEmitter {
     // Handle messages from Claude SDK
     if (data.type === 'assistant_response') {
       const textContent = data.content;
+      
+      // Store Discovery AI response in conversation history
+      this.conversationHistory.push({
+        role: 'discovery',
+        content: textContent,
+        timestamp: new Date().toISOString()
+      });
       
       // Check for AI-to-AI communication markers at the start of the message
       if (textContent.trimStart().startsWith('@review:')) {
@@ -226,6 +237,13 @@ class DualProcessOrchestrator extends EventEmitter {
       activeProcess: this.activeProcess,
       collaborationState: this.collaborationState,
       messageLength: message.length
+    });
+
+    // Store user message in conversation history
+    this.conversationHistory.push({
+      role: 'user',
+      content: message,
+      timestamp: new Date().toISOString()
     });
 
     // ALWAYS route user messages to Discovery AI
@@ -402,13 +420,26 @@ Please revise the specification based on this feedback.`;
       // Emit typing indicator for Review AI
       this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Review AI' });
       
+      // Check if this is the first review message
+      let messageToSend = message;
+      if (!this.hasReviewBeenTriggered) {
+        // Include conversation history for first Review AI message
+        const conversationContext = this.formatConversationHistory();
+        messageToSend = conversationContext + message;
+        this.hasReviewBeenTriggered = true;
+        this.logger.info('📋 Including conversation history for first Review AI message', {
+          historyLength: this.conversationHistory.length,
+          totalMessageLength: messageToSend.length
+        });
+      }
+      
       // Check if Review AI needs to be started (lazy initialization)
       if (!this.reviewProcess.isRunning) {
         this.logger.info('🚀 Starting Review AI on demand for first review request');
-        await this.reviewProcess.spawn(message, false); // false = not continue, this is the first message
+        await this.reviewProcess.spawn(messageToSend, false); // false = not continue, this is the first message
       } else {
-        this.logger.info('🔄 Routing AI message to Review AI', { messageLength: message.length });
-        await this.reviewProcess.spawn(message, true); // true = continue existing session
+        this.logger.info('🔄 Routing AI message to Review AI', { messageLength: messageToSend.length });
+        await this.reviewProcess.spawn(messageToSend, true); // true = continue existing session
       }
     } else if (to === 'discovery') {
       this.activeProcess = 'discovery';
@@ -433,6 +464,10 @@ Please revise the specification based on this feedback.`;
     this.activeProcess = 'discovery';
     this.collaborationState = 'discovering';
     this.currentSpecDraft = null;
+    
+    // Clear conversation history
+    this.conversationHistory = [];
+    this.hasReviewBeenTriggered = false;
     
     // Restart only Discovery AI after a delay
     // Review AI will be started on-demand
@@ -501,6 +536,26 @@ Please revise the specification based on this feedback.`;
     this.emit('processes_stopped');
     
     this.logger.info('All processes stopped');
+  }
+
+  formatConversationHistory() {
+    if (this.conversationHistory.length === 0) {
+      return '';
+    }
+
+    let formattedHistory = '=== PREVIOUS CONVERSATION CONTEXT ===\n\n';
+    formattedHistory += 'This is the conversation that occurred before your first involvement:\n\n';
+
+    for (const entry of this.conversationHistory) {
+      const role = entry.role === 'user' ? 'USER' : 'DISCOVERY AI';
+      const timestamp = new Date(entry.timestamp).toLocaleTimeString();
+      formattedHistory += `[${timestamp}] ${role}:\n${entry.content}\n\n`;
+    }
+
+    formattedHistory += '=== END OF CONVERSATION CONTEXT ===\n\n';
+    formattedHistory += 'Now, please address the following request with full awareness of the above context:\n\n';
+
+    return formattedHistory;
   }
 }
 
