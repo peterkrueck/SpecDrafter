@@ -249,8 +249,8 @@ class DualProcessOrchestrator extends EventEmitter {
 
     // ALWAYS route user messages to Discovery AI
     // Review AI is a backend service that doesn't interact with users
-    // Append "think harder" to trigger reasoning mode (invisible to user)
-    const prompt = `The user says: "${message}" think harder`;
+    // Append "think hard" to trigger reasoning mode (invisible to user)
+    const prompt = `The user says: "${message}" think hard`;
     this.logger.info('🔄 Sending message to Discovery AI', { 
       promptLength: prompt.length,
       hasThinkingTrigger: true 
