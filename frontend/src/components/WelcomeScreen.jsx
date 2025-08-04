@@ -36,7 +36,8 @@ function WelcomeScreen({ onStart, socket }) {
     { id: 'web-application', label: 'Web Application', description: 'SaaS, e-commerce, social platform' },
     { id: 'mobile-app', label: 'Mobile App', description: 'iOS, Android, cross-platform' },
     { id: 'desktop-software', label: 'Desktop Software', description: 'Windows, macOS, Linux apps' },
-    { id: 'simple-website', label: 'Simple Website', description: 'Blog, Landing Page' }
+    { id: 'simple-website', label: 'Simple Website', description: 'Blog, Landing Page' },
+    { id: 'other', label: 'Other', description: 'Browser Extension, VR/AR, CLI tool, etc.' }
   ];
 
   const handleInputChange = (field, value) => {
@@ -122,8 +123,8 @@ I want to create this project. Please help me draft comprehensive specifications
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-8 max-w-4xl w-full">
+    <div className="min-h-screen flex items-start justify-center px-6 pb-6">
+      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-8 max-w-4xl w-full min-h-[650px]">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white">SpecDrafter</h1>
         </div>
@@ -229,7 +230,7 @@ I want to create this project. Please help me draft comprehensive specifications
             <label className="block text-sm font-medium text-gray-200 mb-3">
               What Do You Want to Build?
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
               {softwareTypes.map((type) => (
                 <button
                   key={type.id}
@@ -258,8 +259,8 @@ I want to create this project. Please help me draft comprehensive specifications
             <textarea
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Tell us about your project idea, key features, target users, and any specific requirements..."
-              rows={5}
+              placeholder="Tell us about your project idea, key features, target users, and any specific requirements. Feel free to mention any preferred tools or technologies..."
+              rows={6}
               className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 resize-none ${
                 errors.description 
                   ? 'border-red-500 focus:ring-red-500' 
