@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ChatPanel from './components/ChatPanel';
 import CollaborationPanel from './components/CollaborationPanel';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -18,6 +18,10 @@ function App() {
   const [projectInfo, setProjectInfo] = useState(null);
   
   const { socket, connected } = useSocket();
+  
+  // Timeout refs for clearing stuck typing indicators
+  const typingTimeoutRef = useRef(null);
+  const collaborationTypingTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -52,6 +56,23 @@ function App() {
 
     socket.on('typing_indicator', (data) => {
       setTypingState({ isTyping: data.isTyping, speaker: data.speaker || '' });
+      
+      if (data.isTyping) {
+        // Clear existing timeout
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        
+        // Set 5-minute timeout to force clear
+        typingTimeoutRef.current = setTimeout(() => {
+          console.warn('Typing indicator timeout after 5 minutes - force clearing');
+          setTypingState({ isTyping: false, speaker: '' });
+        }, 300000); // 5 minutes = 300,000ms
+      } else {
+        // Clear timeout on normal stop
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
+        }
+      }
     });
 
     socket.on('collaboration_detected', (data) => {
@@ -70,6 +91,23 @@ function App() {
     
     socket.on('ai_collaboration_typing', (data) => {
       setCollaborationTypingState({ isTyping: data.isTyping, speaker: data.speaker || '' });
+      
+      if (data.isTyping) {
+        // Clear existing timeout
+        if (collaborationTypingTimeoutRef.current) clearTimeout(collaborationTypingTimeoutRef.current);
+        
+        // Set 5-minute timeout to force clear
+        collaborationTypingTimeoutRef.current = setTimeout(() => {
+          console.warn('Collaboration typing indicator timeout after 5 minutes - force clearing');
+          setCollaborationTypingState({ isTyping: false, speaker: '' });
+        }, 300000); // 5 minutes
+      } else {
+        // Clear timeout on normal stop
+        if (collaborationTypingTimeoutRef.current) {
+          clearTimeout(collaborationTypingTimeoutRef.current);
+          collaborationTypingTimeoutRef.current = null;
+        }
+      }
     });
 
     socket.on('spec_file_generated', (data) => {
@@ -101,6 +139,20 @@ function App() {
       setTypingState({ isTyping: false, speaker: '' });
       setCollaborationTypingState({ isTyping: false, speaker: '' });
     });
+    
+    socket.on('error', (data) => {
+      console.error('Process error:', data);
+      // Clear all typing states on error
+      setTypingState({ isTyping: false, speaker: '' });
+      setCollaborationTypingState({ isTyping: false, speaker: '' });
+    });
+    
+    socket.on('process_exit', (data) => {
+      console.warn('Process exited:', data);
+      // Clear all typing states on process exit
+      setTypingState({ isTyping: false, speaker: '' });
+      setCollaborationTypingState({ isTyping: false, speaker: '' });
+    });
 
     return () => {
       socket.off('orchestrator_status');
@@ -115,6 +167,12 @@ function App() {
       socket.off('project_info');
       socket.off('model_changed');
       socket.off('processes_stopped');
+      socket.off('error');
+      socket.off('process_exit');
+      
+      // Clear timeouts on unmount
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (collaborationTypingTimeoutRef.current) clearTimeout(collaborationTypingTimeoutRef.current);
     };
   }, [socket]);
 
