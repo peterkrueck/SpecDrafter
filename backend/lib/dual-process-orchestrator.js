@@ -179,11 +179,12 @@ class DualProcessOrchestrator extends EventEmitter {
       
       const forwardMessage = `Technical Review feedback:\n\n${textContent}`;
       this.logger.info('🔄 Forwarding Review AI output to Discovery AI', { 
-        messageLength: forwardMessage.length 
+        messageLength: forwardMessage.length,
+        hasThinkingTrigger: true 
       });
       
-      // Use spawn to send the message to Discovery AI
-      await this.discoveryProcess.spawn(forwardMessage, true);
+      // Use spawn to send the message to Discovery AI with "think harder" trigger
+      await this.discoveryProcess.spawn(forwardMessage + ' think harder', true);
       
       // Update collaboration state
       this.collaborationState = 'refining';
@@ -248,8 +249,12 @@ class DualProcessOrchestrator extends EventEmitter {
 
     // ALWAYS route user messages to Discovery AI
     // Review AI is a backend service that doesn't interact with users
-    const prompt = `The user says: "${message}"`;
-    this.logger.info('🔄 Sending message to Discovery AI', { promptLength: prompt.length });
+    // Append "think harder" to trigger reasoning mode (invisible to user)
+    const prompt = `The user says: "${message}" think harder`;
+    this.logger.info('🔄 Sending message to Discovery AI', { 
+      promptLength: prompt.length,
+      hasThinkingTrigger: true 
+    });
     
     // Ensure we're on discovery process
     this.activeProcess = 'discovery';
@@ -435,11 +440,18 @@ Please revise the specification based on this feedback.`;
       
       // Check if Review AI needs to be started (lazy initialization)
       if (!this.reviewProcess.isRunning) {
-        this.logger.info('🚀 Starting Review AI on demand for first review request');
-        await this.reviewProcess.spawn(messageToSend, false); // false = not continue, this is the first message
+        this.logger.info('🚀 Starting Review AI on demand for first review request', {
+          hasThinkingTrigger: true
+        });
+        // Append "think harder" trigger for AI reasoning mode
+        await this.reviewProcess.spawn(messageToSend + ' think harder', false); // false = not continue, this is the first message
       } else {
-        this.logger.info('🔄 Routing AI message to Review AI', { messageLength: messageToSend.length });
-        await this.reviewProcess.spawn(messageToSend, true); // true = continue existing session
+        this.logger.info('🔄 Routing AI message to Review AI', { 
+          messageLength: messageToSend.length,
+          hasThinkingTrigger: true 
+        });
+        // Append "think harder" trigger for AI reasoning mode
+        await this.reviewProcess.spawn(messageToSend + ' think harder', true); // true = continue existing session
       }
     } else if (to === 'discovery') {
       this.activeProcess = 'discovery';
@@ -447,8 +459,12 @@ Please revise the specification based on this feedback.`;
       // Emit typing indicator for Discovery AI
       this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Discovery AI' });
       
-      this.logger.info('🔄 Routing AI message to Discovery AI', { messageLength: message.length });
-      await this.discoveryProcess.spawn(message, true);
+      this.logger.info('🔄 Routing AI message to Discovery AI', { 
+        messageLength: message.length,
+        hasThinkingTrigger: true 
+      });
+      // Append "think harder" trigger for AI reasoning mode
+      await this.discoveryProcess.spawn(message + ' think harder', true);
     }
   }
 
