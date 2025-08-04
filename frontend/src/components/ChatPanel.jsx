@@ -87,7 +87,7 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
       setInputValue('');
       // Reset textarea height
       if (textareaRef.current) {
-        textareaRef.current.style.height = '40px';
+        textareaRef.current.style.height = '80px';
       }
     }
   };
@@ -110,7 +110,7 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
     setInputValue(e.target.value);
     // Auto-resize textarea
     e.target.style.height = 'auto';
-    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; // Max ~4 rows
+    e.target.style.height = Math.max(80, Math.min(e.target.scrollHeight, 160)) + 'px'; // Min 80px, Max ~5 rows
   };
 
   const resetSession = () => {
@@ -237,7 +237,7 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
       </div>
       
       <div className="p-4 border-t border-white/10">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-stretch">
           <textarea
             ref={textareaRef}
             value={inputValue}
@@ -245,22 +245,17 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
             onKeyPress={handleKeyPress}
             onKeyDown={handleKeyDown}
             placeholder="Type your message here..."
-            className="flex-1 bg-white/5 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden"
-            rows={1}
-            style={{ minHeight: '40px' }}
+            className="flex-1 bg-white/5 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-y-auto"
+            rows={2}
+            style={{ minHeight: '80px', height: '80px' }}
           />
-          <button
-            onClick={sendMessage}
-            disabled={!inputValue.trim()}
-            className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Send
-          </button>
-          {(typingState.isTyping || collaborationTypingState.isTyping) ? (
+          <div className="flex flex-col gap-2 justify-end">
             <button
               onClick={handleStopAI}
               disabled={isStopping}
-              className="px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 w-[180px] justify-center"
+              className={`px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 w-[180px] justify-center h-10 ${
+                typingState.isTyping || collaborationTypingState.isTyping ? 'visible' : 'invisible pointer-events-none'
+              }`}
               title={collaborationTypingState.isTyping ? "Stop AI collaboration" : "Stop AI response"}
             >
               {isStopping ? (
@@ -269,22 +264,23 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span className="hidden sm:inline">Stopping...</span>
+                  <span>Stopping...</span>
                 </>
               ) : (
                 <>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="6" y="6" width="12" height="12" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                   </svg>
-                  <span className="hidden sm:inline">Stop</span>
+                  <span>Stop</span>
                 </>
               )}
             </button>
-          ) : canGenerateSpec ? (
             <button 
               onClick={handleGenerateSpec}
               disabled={!canGenerateSpec}
-              className="px-6 py-2 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 w-[180px] justify-center"
+              className={`px-6 py-2 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 w-[180px] justify-center h-10 ${
+                canGenerateSpec && !(typingState.isTyping || collaborationTypingState.isTyping) ? 'visible' : 'invisible pointer-events-none'
+              }`}
               title="Generate and review specification"
             >
               {isGeneratingSpec ? (
@@ -293,18 +289,25 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span className="hidden sm:inline">Generating...</span>
+                  <span>Generating...</span>
                 </>
               ) : (
                 <>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span className="hidden sm:inline">Generate Spec</span>
+                  <span>Create Spec</span>
                 </>
               )}
             </button>
-          ) : null}
+            <button
+              onClick={sendMessage}
+              disabled={!inputValue.trim()}
+              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed h-10 w-[180px]"
+            >
+              Send
+            </button>
+          </div>
         </div>
       </div>
       
