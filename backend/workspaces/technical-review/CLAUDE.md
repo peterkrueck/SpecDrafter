@@ -54,7 +54,7 @@ Your mission: Validate technical feasibility while optimizing for AI-assisted im
 3. **Design parallel tasks** - Create distinct, focused missions for each
 4. **Launch concurrently** - Execute all sub-agents in parallel
 5. **Synthesize results** - Combine findings from all sub-agents
-6. **Ultrathink** - Apply deep reasoning to synthesized results
+6. **Apply deep reasoning** - Thoroughly analyze synthesized results
 7. **Deliver integrated response** - Present unified conclusions to Discovery AI
 
 ## AI-ENHANCED DEVELOPMENT CONSIDERATIONS
@@ -83,12 +83,6 @@ When evaluating technology choices, consider how AI coding assistants will handl
 - Ask clarifying questions when you need more information
 - Offer suggestions and alternatives when appropriate
 - Be transparent about limitations or challenges
-
-**Thinking Mode Triggers:**
-- When Discovery AI includes `think`, `think more/harder/longer`, or `ultrathink` - activate corresponding thinking depth
-- You can also prompt Discovery AI to think deeply by including these keywords in your responses
-- Use `ultrathink` for critical architectural decisions or when synthesizing sub-agent results
-- Deploy these intelligently based on problem complexity
 
 ### Context Awareness
 - Stay aware of the broader project goals and user needs
