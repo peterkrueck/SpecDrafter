@@ -11,6 +11,7 @@ function WelcomeScreen({ onStart, socket }) {
   
   const [formData, setFormData] = useState({
     projectName: '',
+    projectScope: 'mvp',
     skillLevel: '',
     platforms: [],
     description: '',
@@ -50,6 +51,15 @@ function WelcomeScreen({ onStart, socket }) {
   }, []);
 
   const [errors, setErrors] = useState({});
+
+  const projectScopes = [
+    { id: 'personal', label: 'Personal/Hobby', description: 'Side project or learning' },
+    { id: 'open-source', label: 'Open Source', description: 'Community project with contributors' },
+    { id: 'prototype', label: 'Prototype/PoC', description: 'Testing an idea' },
+    { id: 'mvp', label: 'MVP/Startup', description: 'First product version' },
+    { id: 'small-business', label: 'Small Business', description: 'Production for small team' },
+    { id: 'enterprise', label: 'Enterprise', description: 'Large scale with compliance' }
+  ];
 
   const skillLevels = [
     { id: 'non-tech', label: 'Non-Tech', description: 'No programming experience' },
@@ -99,12 +109,53 @@ function WelcomeScreen({ onStart, socket }) {
     }
   };
 
+  // Helper functions for enriching the initial message with context
+  const getScopeContext = (scopeId) => {
+    const contexts = {
+      'personal': 'This is a personal/hobby project focused on learning and experimentation. Simplicity and maintainability are key.',
+      'open-source': 'This will be an open-source project needing contributor-friendly architecture, clear documentation, and community standards.',
+      'prototype': 'This is a proof-of-concept to validate ideas quickly. Speed of development matters more than long-term scalability.',
+      'mvp': 'This is an MVP targeting real users. Need balance between quick delivery and solid foundation for growth.',
+      'small-business': 'This is for production use in a small business context. Reliability, cost-effectiveness, and ease of maintenance are priorities.',
+      'enterprise': 'This requires enterprise-grade architecture with focus on security, compliance, scalability, and integration capabilities.'
+    };
+    return contexts[scopeId] || '';
+  };
+
+  const getSkillContext = (skillId) => {
+    const contexts = {
+      'non-tech': 'I have no programming experience. Please explain technical concepts simply and focus on business/user outcomes.',
+      'tech-savvy': 'I\'m comfortable with technology but not a programmer. I can handle some technical concepts with clear explanations.',
+      'software-professional': 'I\'m an experienced developer. Feel free to use technical terminology and discuss implementation details.'
+    };
+    return contexts[skillId] || '';
+  };
+
+  const getPlatformDetails = (platformIds) => {
+    const platformDetails = {
+      'mobile': 'Mobile (iOS, Android, Cross-platform)',
+      'desktop': 'Desktop (Windows, macOS, Linux)',
+      'web': 'Web (Browser-based applications)',
+      'vr-ar': 'VR/AR (Virtual & Augmented Reality)',
+      'other': 'Other (CLI, IoT, Embedded systems)'
+    };
+    
+    const selected = platformIds.map(id => platformDetails[id]).filter(Boolean);
+    
+    if (selected.length === 0) return '';
+    if (selected.length === 1) return `Target Platform: ${selected[0]}`;
+    return `Target Platforms:\n${selected.map(p => `- ${p}`).join('\n')}`;
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
     if (mode === 'new') {
       if (!formData.projectName.trim()) {
         newErrors.projectName = 'Project name is required';
+      }
+      if (!formData.projectScope) {
+        newErrors.projectScope = 'Please select a project scope';
       }
       if (!formData.skillLevel) {
         newErrors.skillLevel = 'Please select your skill level';
@@ -141,17 +192,22 @@ function WelcomeScreen({ onStart, socket }) {
   const handleStart = () => {
     if (mode === 'new') {
       if (validateForm()) {
-        // Compose the initial message
+        // Compose the enhanced initial message with context
+        const scopeLabel = projectScopes.find(s => s.id === formData.projectScope)?.label || formData.projectScope;
         const skillLevelText = skillLevels.find(s => s.id === formData.skillLevel)?.label || formData.skillLevel;
-        const platformsText = formData.platforms
-          .map(id => platforms.find(p => p.id === id)?.label)
-          .filter(Boolean)
-          .join(', ');
         
         const initialMessage = `Project: ${formData.projectName}
-Skill Level: ${skillLevelText}
-Target Platforms: ${platformsText}
-Description: ${formData.description}
+
+Project Scope: ${scopeLabel}
+${getScopeContext(formData.projectScope)}
+
+Technical Background: ${skillLevelText}
+${getSkillContext(formData.skillLevel)}
+
+${getPlatformDetails(formData.platforms)}
+
+Project Vision:
+${formData.description}
 
 I want to create this project. Please help me draft comprehensive specifications.`;
 
@@ -240,26 +296,54 @@ I want to create this project. Please help me draft comprehensive specifications
 
         {mode === 'new' ? (
           <div className="space-y-5">
-          {/* Project Name and Model Selection Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] gap-4">
+          {/* Project Name - Full Width */}
+          <div>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Project Name
+            </label>
+            <input
+              type="text"
+              value={formData.projectName}
+              onChange={(e) => handleInputChange('projectName', e.target.value)}
+              placeholder="Enter your project name..."
+              className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                errors.projectName 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-white/20 focus:ring-blue-500'
+              }`}
+            />
+            {errors.projectName && (
+              <p className="text-red-400 text-sm mt-1">{errors.projectName}</p>
+            )}
+          </div>
+          
+          {/* Project Scope and Model Selection Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-200 mb-2">
-                Project Name
+                Project Scope
               </label>
-              <input
-                type="text"
-                value={formData.projectName}
-                onChange={(e) => handleInputChange('projectName', e.target.value)}
-                placeholder="Enter your project name..."
-                className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 ${
-                  errors.projectName 
+              <select
+                value={formData.projectScope}
+                onChange={(e) => handleInputChange('projectScope', e.target.value)}
+                className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 transition-all duration-200 ${
+                  errors.projectScope 
                     ? 'border-red-500 focus:ring-red-500' 
                     : 'border-white/20 focus:ring-blue-500'
                 }`}
-              />
-              {errors.projectName && (
-                <p className="text-red-400 text-sm mt-1">{errors.projectName}</p>
+              >
+                {projectScopes.map((scope) => (
+                  <option key={scope.id} value={scope.id} className="bg-gray-900">
+                    {scope.label} - {scope.description}
+                  </option>
+                ))}
+              </select>
+              {errors.projectScope && (
+                <p className="text-red-400 text-sm mt-1">{errors.projectScope}</p>
               )}
+              <p className="text-xs text-gray-400 mt-1">
+                This helps tailor the architecture and features to your project's goals
+              </p>
             </div>
             
             <div>
@@ -527,7 +611,7 @@ I want to create this project. Please help me draft comprehensive specifications
             {mode === 'new' ? (
               <button
                 onClick={handleStart}
-                disabled={!formData.projectName || !formData.skillLevel || formData.platforms.length === 0 || !formData.description}
+                disabled={!formData.projectName || !formData.projectScope || !formData.skillLevel || formData.platforms.length === 0 || !formData.description}
                 className="w-full max-w-md bg-gradient-to-r from-rose-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-rose-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
               >
                 Start Drafting Specifications
