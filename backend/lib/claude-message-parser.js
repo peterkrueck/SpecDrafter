@@ -188,6 +188,100 @@ class ClaudeMessageParser {
     return systemPatterns.some(pattern => pattern.test(message));
   }
 
+  /**
+   * Filters out all thinking tags and their content from messages
+   * Handles various malformed variations like <thhinking>, <thinkking>, etc.
+   * @param {string} message - The message to filter
+   * @returns {string} - The filtered message
+   */
+  filterThinkingTags(message) {
+    if (!message) return message;
+
+    // Log original message for debugging
+    const originalLength = message.length;
+    
+    // Enhanced pattern to match thinking tags with common misspellings
+    // This captures more variations: <thinking>, <thhinking>, <thinkking>, <thinkin>, etc.
+    // The pattern now allows for multiple h's and k's
+    const openingPattern = /<t+h+[i]*n+k*[i]*n*g*[^>]*>/gi;
+    const closingPattern = /<\/t+h+[i]*n+k*[i]*n*g*[^>]*>/gi;
+    
+    // First, find all opening thinking tags and their positions
+    const openingTags = [];
+    let match;
+    
+    while ((match = openingPattern.exec(message)) !== null) {
+      openingTags.push({
+        tag: match[0],
+        start: match.index,
+        end: match.index + match[0].length
+      });
+    }
+
+    // Work backwards through the tags to avoid position shifts
+    let filtered = message;
+    for (let i = openingTags.length - 1; i >= 0; i--) {
+      const opening = openingTags[i];
+      
+      // Look for a closing tag after this opening tag
+      const afterOpening = message.substring(opening.end);
+      // Create a specific pattern for this opening tag's closing tag
+      const tagName = opening.tag.match(/<(t+h+[i]*n+k*[i]*n*g*)/i)[1];
+      const specificClosingPattern = new RegExp(`<\\/${tagName}[^>]*>`, 'i');
+      const closingMatch = afterOpening.match(specificClosingPattern);
+      
+      if (closingMatch) {
+        // Found a proper closing tag - remove everything from opening to closing
+        const closingStart = opening.end + closingMatch.index;
+        const closingEnd = closingStart + closingMatch[0].length;
+        
+        // Log what we're removing if it contains @review
+        const removedContent = filtered.substring(opening.start, closingEnd);
+        if (removedContent.includes('@review:')) {
+          this.logger.warn('Filtering out @review: marker found inside thinking tags', {
+            removedContent: removedContent.substring(0, 100) + '...'
+          });
+        }
+        
+        // Remove the entire thinking block, preserving spaces
+        const before = filtered.substring(0, opening.start);
+        const after = filtered.substring(closingEnd);
+        // Add a space if needed to prevent word concatenation
+        const needsSpace = before.length > 0 && after.length > 0 && 
+                          before[before.length - 1] !== ' ' && after[0] !== ' ';
+        filtered = before + (needsSpace ? ' ' : '') + after;
+      } else {
+        // No closing tag found - remove everything from the opening tag to end of message
+        const removedContent = filtered.substring(opening.start);
+        if (removedContent.includes('@review:')) {
+          this.logger.warn('Filtering out potential @review: after unclosed thinking tag', {
+            removedContent: removedContent.substring(0, 100) + '...'
+          });
+        }
+        
+        // Remove from opening tag onwards
+        filtered = filtered.substring(0, opening.start).trimEnd();
+      }
+    }
+
+    // Clean up any remaining closing tags without opening tags
+    filtered = filtered.replace(closingPattern, '');
+
+    // Clean up any double spaces left behind
+    filtered = filtered.replace(/\s\s+/g, ' ').trim();
+
+    // Log if we filtered anything
+    if (filtered.length !== originalLength) {
+      this.logger.info('Filtered thinking tags from message', {
+        originalLength,
+        filteredLength: filtered.length,
+        removed: originalLength - filtered.length
+      });
+    }
+
+    return filtered;
+  }
+
   reset() {
     this.logger.info('Parser reset');
     this.conversationBuffer = [];
