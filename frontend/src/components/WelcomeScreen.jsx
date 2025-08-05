@@ -12,7 +12,7 @@ function WelcomeScreen({ onStart, socket }) {
   const [formData, setFormData] = useState({
     projectName: '',
     skillLevel: '',
-    softwareType: '',
+    platforms: [],
     description: '',
     modelId: ''
   });
@@ -57,12 +57,12 @@ function WelcomeScreen({ onStart, socket }) {
     { id: 'software-professional', label: 'Software Professional', description: 'Extensive experience' }
   ];
 
-  const softwareTypes = [
-    { id: 'web-application', label: 'Web Application', description: 'SaaS, e-commerce, social platform' },
-    { id: 'mobile-app', label: 'Mobile App', description: 'iOS, Android, cross-platform' },
-    { id: 'desktop-software', label: 'Desktop Software', description: 'Windows, macOS, Linux apps' },
-    { id: 'simple-website', label: 'Simple Website', description: 'Blog, Landing Page' },
-    { id: 'other', label: 'Other', description: 'Browser Extension, VR/AR, CLI tool, etc.' }
+  const platforms = [
+    { id: 'mobile', label: 'Mobile', description: 'iOS, Android, Cross-platform' },
+    { id: 'desktop', label: 'Desktop', description: 'Windows, macOS, Linux' },
+    { id: 'web', label: 'Web', description: 'Browser-based applications' },
+    { id: 'vr-ar', label: 'VR/AR', description: 'Virtual & Augmented Reality' },
+    { id: 'other', label: 'Other', description: 'CLI, IoT, Embedded, etc.' }
   ];
 
   const handleInputChange = (field, value) => {
@@ -86,6 +86,19 @@ function WelcomeScreen({ onStart, socket }) {
     }
   };
 
+  const handlePlatformToggle = (platformId) => {
+    setFormData(prev => ({
+      ...prev,
+      platforms: prev.platforms.includes(platformId)
+        ? prev.platforms.filter(id => id !== platformId)
+        : [...prev.platforms, platformId]
+    }));
+    // Clear error when user selects a platform
+    if (errors.platforms && !formData.platforms.includes(platformId)) {
+      setErrors(prev => ({ ...prev, platforms: null }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -96,8 +109,8 @@ function WelcomeScreen({ onStart, socket }) {
       if (!formData.skillLevel) {
         newErrors.skillLevel = 'Please select your skill level';
       }
-      if (!formData.softwareType) {
-        newErrors.softwareType = 'Please select software type';
+      if (formData.platforms.length === 0) {
+        newErrors.platforms = 'Please select at least one platform';
       }
       if (!formData.description.trim()) {
         newErrors.description = 'Please describe your project idea';
@@ -130,11 +143,14 @@ function WelcomeScreen({ onStart, socket }) {
       if (validateForm()) {
         // Compose the initial message
         const skillLevelText = skillLevels.find(s => s.id === formData.skillLevel)?.label || formData.skillLevel;
-        const softwareTypeText = softwareTypes.find(s => s.id === formData.softwareType)?.label || formData.softwareType;
+        const platformsText = formData.platforms
+          .map(id => platforms.find(p => p.id === id)?.label)
+          .filter(Boolean)
+          .join(', ');
         
         const initialMessage = `Project: ${formData.projectName}
 Skill Level: ${skillLevelText}
-Software Type: ${softwareTypeText}
+Target Platforms: ${platformsText}
 Description: ${formData.description}
 
 I want to create this project. Please help me draft comprehensive specifications.`;
@@ -337,30 +353,38 @@ I want to create this project. Please help me draft comprehensive specifications
             )}
           </div>
 
-          {/* Software Type */}
+          {/* Target Platforms */}
           <div>
             <label className="block text-sm font-medium text-gray-200 mb-3">
-              What Do You Want to Build?
+              Target Platforms (select all that apply)
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-              {softwareTypes.map((type) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              {platforms.map((platform) => (
                 <button
-                  key={type.id}
-                  onClick={() => handleInputChange('softwareType', type.id)}
-                  className={`p-3 rounded-lg border transition-all duration-200 text-left ${
-                    formData.softwareType === type.id
+                  key={platform.id}
+                  onClick={() => handlePlatformToggle(platform.id)}
+                  className={`p-3 rounded-lg border transition-all duration-200 text-left relative ${
+                    formData.platforms.includes(platform.id)
                       ? 'bg-purple-500/20 border-purple-500 text-purple-200'
                       : 'bg-white/5 border-white/20 text-gray-300 hover:bg-white/10 hover:border-white/30'
                   }`}
                 >
-                  <div className="font-medium text-sm">{type.label}</div>
-                  <div className="text-xs opacity-80 mt-1">{type.description}</div>
+                  <div className="font-medium text-sm">{platform.label}</div>
+                  <div className="text-xs opacity-80 mt-1">{platform.description}</div>
+                  {formData.platforms.includes(platform.id) && (
+                    <div className="absolute top-2 right-2 text-purple-400">
+                      ✓
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
-            {errors.softwareType && (
-              <p className="text-red-400 text-sm mt-1">{errors.softwareType}</p>
+            {errors.platforms && (
+              <p className="text-red-400 text-sm mt-1">{errors.platforms}</p>
             )}
+            <p className="text-xs text-gray-400 mt-2">
+              Select all platforms where your application will run
+            </p>
           </div>
 
           {/* Project Description */}
@@ -388,7 +412,7 @@ I want to create this project. Please help me draft comprehensive specifications
           <div className="pt-4 flex justify-center">
             <button
               onClick={handleStart}
-              disabled={!formData.projectName || !formData.skillLevel || !formData.softwareType || !formData.description}
+              disabled={!formData.projectName || !formData.skillLevel || formData.platforms.length === 0 || !formData.description}
               className="w-full max-w-md bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
             >
               Start Drafting Specifications
