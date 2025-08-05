@@ -46,6 +46,7 @@ class ClaudeSDKManager extends EventEmitter {
         permissionMode: 'bypassPermissions', // For automated process
         allowedTools: ['Read', 'Write', 'Edit', 'MultiEdit', 'Bash', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebSearch', 'Task'],
         maxTurns: 10,
+        outputFormat: 'stream-json', // Enable detailed streaming events including tool usage
         abortController: this.abortController, // Pass AbortController to query
         stderr: (data) => {
           this.logger.error('Claude stderr', { data });
@@ -143,6 +144,33 @@ class ClaudeSDKManager extends EventEmitter {
         break;
 
       case 'assistant':
+        // Debug log to see the structure
+        this.logger.debug('Assistant message structure', {
+          contentType: Array.isArray(message.message.content) ? 'array' : typeof message.message.content,
+          contentLength: Array.isArray(message.message.content) ? message.message.content.length : 'N/A',
+          role: this.role
+        });
+        
+        // Check for tool usage in the content array first
+        if (Array.isArray(message.message.content)) {
+          message.message.content.forEach(item => {
+            if (item.type === 'tool_use') {
+              this.logger.info('Tool usage detected in assistant message', {
+                toolName: item.name,
+                toolId: item.id,
+                role: this.role
+              });
+              this.emit('data', {
+                type: 'tool_use',
+                toolName: item.name,
+                toolInput: item.input,
+                toolId: item.id,
+                metadata: item
+              });
+            }
+          });
+        }
+        
         // Extract text content from assistant messages
         const textContent = this.extractTextContent(message.message.content);
         if (textContent) {
@@ -162,6 +190,7 @@ class ClaudeSDKManager extends EventEmitter {
           metadata: message
         });
         break;
+
 
       case 'result':
         // Final result with usage info

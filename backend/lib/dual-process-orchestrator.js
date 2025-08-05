@@ -30,7 +30,6 @@ class DualProcessOrchestrator extends EventEmitter {
     // Current state
     this.activeProcess = 'discovery';
     this.collaborationState = 'discovering'; // discovering → drafting → reviewing → refining
-    this.currentSpecDraft = null;
     
     // Conversation history tracking
     this.conversationHistory = [];
@@ -101,10 +100,33 @@ class DualProcessOrchestrator extends EventEmitter {
     this.logger.debug('Discovery output', { 
       type: data.type, 
       contentType: typeof data.content,
-      preview: JSON.stringify(data.content).substring(0, 100) 
+      preview: data.content ? JSON.stringify(data.content).substring(0, 100) : 'No content'
     });
 
     // Handle messages from Claude SDK
+    if (data.type === 'tool_use') {
+      // Handle tool usage events
+      this.logger.info('🔧 Tool usage detected from Discovery AI', {
+        toolName: data.toolName,
+        toolId: data.toolId
+      });
+      
+      // Check if it's a Write tool being used to create spec.md
+      if (data.toolName === 'Write' && data.toolInput?.file_path?.includes('spec.md')) {
+        this.logger.info('📝 Spec writing started', {
+          filePath: data.toolInput.file_path,
+          toolId: data.toolId
+        });
+        
+        this.emit('spec_writing_started', {
+          filePath: data.toolInput.file_path,
+          toolId: data.toolId,
+          timestamp: new Date().toISOString()
+        });
+      }
+      return;
+    }
+    
     if (data.type === 'assistant_response') {
       const textContent = data.content;
       
@@ -174,19 +196,6 @@ class DualProcessOrchestrator extends EventEmitter {
         timestamp: new Date().toISOString()
       });
 
-      // Check if this looks like a draft specification
-      if (this.isSpecificationDraft(textContent)) {
-        this.logger.info('Draft specification detected, preparing for review');
-        this.currentSpecDraft = textContent;
-        this.collaborationState = 'reviewing';
-        
-        // Notify frontend about collaboration
-        this.emit('collaboration_detected', {
-          type: 'draft_ready',
-          from: 'discovery',
-          to: 'review'
-        });
-      }
     }
   }
 
@@ -194,10 +203,19 @@ class DualProcessOrchestrator extends EventEmitter {
     this.logger.debug('Review output', { 
       type: data.type, 
       contentType: typeof data.content,
-      preview: JSON.stringify(data.content).substring(0, 100) 
+      preview: data.content ? JSON.stringify(data.content).substring(0, 100) : 'No content'
     });
 
     // Handle messages from Claude SDK
+    if (data.type === 'tool_use') {
+      // Ignore tool usage events from Review AI
+      this.logger.debug('Tool usage from Review AI (ignoring)', {
+        toolName: data.toolName,
+        toolId: data.toolId
+      });
+      return;
+    }
+    
     if (data.type === 'assistant_response') {
       const textContent = data.content;
       
@@ -313,42 +331,6 @@ class DualProcessOrchestrator extends EventEmitter {
     await this.discoveryProcess.spawn(prompt, true);
   }
 
-  async triggerReview() {
-    if (!this.currentSpecDraft) {
-      this.logger.warn('No draft specification available for review');
-      return;
-    }
-
-    this.logger.info('Triggering specification review');
-    this.activeProcess = 'review';
-    
-    const reviewPrompt = `Please review this draft specification and provide technical feedback:
-
-${this.currentSpecDraft}
-
-Consider:
-1. Technical feasibility
-2. Missing implementation details
-3. Security considerations
-4. Performance implications
-5. Integration challenges`;
-
-    await this.reviewProcess.spawn(reviewPrompt, true);
-  }
-
-  async sendFeedbackToDiscovery(feedback) {
-    this.logger.info('Sending feedback to discovery process');
-    this.activeProcess = 'discovery';
-    this.collaborationState = 'refining';
-
-    const feedbackPrompt = `The technical reviewer provided this feedback on your specification:
-
-${feedback}
-
-Please revise the specification based on this feedback.`;
-
-    await this.discoveryProcess.spawn(feedbackPrompt, true);
-  }
 
   switchActiveProcess(processName) {
     // Review AI is now a backend service - users can't switch to it
@@ -371,50 +353,6 @@ Please revise the specification based on this feedback.`;
     });
   }
 
-  isSpecificationDraft(content) {
-    // Simple heuristic to detect specification drafts
-    const specKeywords = [
-      'specification',
-      'requirements',
-      'functional requirements',
-      'non-functional requirements',
-      'architecture',
-      'user stories',
-      'acceptance criteria'
-    ];
-
-    const lowerContent = content.toLowerCase();
-    const keywordCount = specKeywords.filter(keyword => 
-      lowerContent.includes(keyword)
-    ).length;
-
-    // Also check for markdown headers that suggest a spec
-    const hasHeaders = /^#{1,3}\s+/m.test(content);
-    const hasLists = /^[\-\*]\s+/m.test(content);
-
-    return keywordCount >= 2 && (hasHeaders || hasLists);
-  }
-
-  isFeedback(content) {
-    // Detect if the review output is feedback vs just acknowledgment
-    const feedbackIndicators = [
-      'suggest',
-      'recommend',
-      'consider',
-      'missing',
-      'should',
-      'could',
-      'improve',
-      'add',
-      'clarify',
-      'elaborate'
-    ];
-
-    const lowerContent = content.toLowerCase();
-    return feedbackIndicators.some(indicator => 
-      lowerContent.includes(indicator)
-    );
-  }
 
   async handleAIToAICommunication(from, to, fullContent) {
     // Extract the message after the marker (we know it starts with @review: from the caller)
@@ -520,7 +458,6 @@ Please revise the specification based on this feedback.`;
     
     this.activeProcess = 'discovery';
     this.collaborationState = 'discovering';
-    this.currentSpecDraft = null;
     
     // Clear conversation history
     this.conversationHistory = [];
@@ -561,7 +498,6 @@ Please revise the specification based on this feedback.`;
     return {
       activeProcess: this.activeProcess,
       collaborationState: this.collaborationState,
-      hasSpecDraft: !!this.currentSpecDraft,
       currentModel: this.currentModelConfig,
       processes: {
         discovery: this.discoveryProcess.getStatus(),

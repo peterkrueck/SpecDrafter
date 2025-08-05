@@ -13,6 +13,7 @@ function App() {
   const [collaborationTypingState, setCollaborationTypingState] = useState({ isTyping: false, speaker: '' });
   const [collaboration, setCollaboration] = useState([]);
   const [specContent, setSpecContent] = useState(null);
+  const [isGeneratingSpec, setIsGeneratingSpec] = useState(false);
   const [currentModel, setCurrentModel] = useState(null);
   const [availableModels, setAvailableModels] = useState([]);
   const [projectInfo, setProjectInfo] = useState(null);
@@ -110,6 +111,12 @@ function App() {
       }
     });
 
+    socket.on('spec_writing_started', (data) => {
+      console.log('📝 Spec writing started:', data.filePath);
+      setIsGeneratingSpec(true);
+      setCurrentView('spec');
+    });
+
     socket.on('spec_file_generated', (data) => {
       setSpecContent({
         html: data.html,
@@ -118,6 +125,7 @@ function App() {
         fileName: data.fileName
       });
       setCurrentView('spec');
+      setIsGeneratingSpec(false);
     });
 
     socket.on('spec_file_updated', (data) => {
@@ -131,6 +139,7 @@ function App() {
       });
       // Don't auto-switch view for updates, user might be reading collaboration panel
     });
+
 
     socket.on('processes_stopped', () => {
       console.log('Processes stopped');
@@ -161,6 +170,7 @@ function App() {
       socket.off('collaboration_detected');
       socket.off('ai_collaboration_message');
       socket.off('ai_collaboration_typing');
+      socket.off('spec_writing_started');
       socket.off('spec_file_generated');
       socket.off('spec_file_updated');
       socket.off('available_models');
@@ -230,6 +240,8 @@ function App() {
           onResetSession={handleResetSession}
           currentModel={currentModel}
           availableModels={availableModels}
+          isGeneratingSpec={isGeneratingSpec}
+          setIsGeneratingSpec={setIsGeneratingSpec}
         />
         <CollaborationPanel
           currentView={currentView}
@@ -237,6 +249,7 @@ function App() {
           collaboration={collaboration}
           specContent={specContent}
           typingState={collaborationTypingState}
+          isGeneratingSpec={isGeneratingSpec}
         />
       </div>
       

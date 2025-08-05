@@ -75,11 +75,6 @@ io.on('connection', (socket) => {
     orchestrator.switchActiveProcess(data.process);
   });
 
-  // Handle collaboration trigger
-  socket.on('trigger_review', async () => {
-    logger.info('Review trigger requested');
-    await orchestrator.triggerReview();
-  });
 
   // Handle manual process start request with optional model and initial message
   socket.on('start_processes', async (data = {}) => {
@@ -368,6 +363,11 @@ function setupOrchestratorHandlers() {
   orchestrator.on('typing_indicator', (data) => {
     logger.info('Typing indicator from orchestrator', { speaker: data.speaker, isTyping: data.isTyping });
     io.emit('typing_indicator', data);
+  });
+  
+  orchestrator.on('spec_writing_started', (data) => {
+    logger.info('📝 Spec writing started', { filePath: data.filePath, toolId: data.toolId });
+    io.emit('spec_writing_started', data);
   });
   
   orchestrator.on('processes_stopped', () => {

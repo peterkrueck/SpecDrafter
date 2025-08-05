@@ -3,10 +3,9 @@ import Message from './Message';
 import TypingIndicator from './TypingIndicator';
 import { MODEL_STORAGE_KEY } from '../config/models.js';
 
-function ChatPanel({ messages, setMessages, typingState, collaborationTypingState, socket, projectData, projectInfo, onResetSession, currentModel, availableModels }) {
+function ChatPanel({ messages, setMessages, typingState, collaborationTypingState, socket, projectData, projectInfo, onResetSession, currentModel, availableModels, isGeneratingSpec, setIsGeneratingSpec }) {
   const [inputValue, setInputValue] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [isGeneratingSpec, setIsGeneratingSpec] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -137,8 +136,6 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
   const handleGenerateSpec = () => {
     if (!canGenerateSpec || !projectInfo) return;
     
-    setIsGeneratingSpec(true);
-    
     // Get project name from projectData
     const projectName = projectData?.projectName || 'UnknownProject';
     
@@ -146,9 +143,6 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
     const message = `Write the complete technical specification to the markdown file at ${projectInfo.specsDir}/${projectName}/spec.md. Start with the project's core idea/concept, list the core features that define the product, specify the target platform(s) (web, mobile, desktop, etc.), and describe the main theme/styling approach. Then provide implementation details including technical architecture, data models, API endpoints, component structure, and integration points. Avoid timelines, budgets, or unnecessary fluff - concentrate only on the technical aspects of how to build it. After writing, ask @review: to check the file for any missing foundational elements (core idea, features, platform, styling) as well as technical details, implementation gaps, or architectural improvements needed, ending your review request with the word ultrathink. ultrathink`;
     
     socket.emit('user_message', { message });
-    
-    // Reset loading state after a delay
-    setTimeout(() => setIsGeneratingSpec(false), 3000);
   };
 
   const handleStopAI = () => {
