@@ -65,7 +65,7 @@ When evaluating technology choices, consider how AI coding assistants will handl
 
 ### Technology Selection Framework
 - **Cognitive Load**: Lower complexity often beats popularity (e.g., Svelte's simplicity vs React's ubiquity)
-- **File Structure**: Fewer files and clear patterns = better AI performance
+- **File Structure**: Clear patterns, less moving parts = better AI performance
 - **Boilerplate**: Minimal, predictable boilerplate aids AI code generation
 - **Error Messages**: Clear, googleable errors help AI self-correct
 - **Documentation**: Well-documented doesn't just mean popular - it means clear, consistent patterns
