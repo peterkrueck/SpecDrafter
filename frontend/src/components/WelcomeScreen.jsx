@@ -187,14 +187,14 @@ I want to create this project. Please help me draft comprehensive specifications
   };
 
   return (
-    <div className="min-h-screen flex items-start justify-center px-6 pb-6">
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-8 max-w-4xl w-full min-h-[650px]">
-        <div className="text-center mb-8">
+    <div className="min-h-screen flex items-start justify-center px-6 pt-0 pb-6">
+      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-6 max-w-4xl w-full max-h-[100vh] overflow-y-auto">
+        <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-white">SpecDrafter</h1>
         </div>
 
         {/* Mode Toggle */}
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-4">
           <div className="inline-flex rounded-lg bg-white/5 p-1">
             <button
               onClick={() => setMode('new')}
@@ -397,7 +397,7 @@ I want to create this project. Please help me draft comprehensive specifications
         </div>
         ) : (
           /* Existing Project Mode */
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Model Selection for Existing Projects */}
             <div>
               <label className="block text-sm font-medium text-gray-200 mb-2">
@@ -469,15 +469,15 @@ I want to create this project. Please help me draft comprehensive specifications
 
             {/* Skill Level for Existing Projects */}
             <div>
-              <label className="block text-sm font-medium text-gray-200 mb-3">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Your Technical Background
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {skillLevels.map((skill) => (
                   <button
                     key={skill.id}
                     onClick={() => handleInputChange('skillLevel', skill.id)}
-                    className={`p-4 rounded-lg border transition-all duration-200 text-left ${
+                    className={`p-3 rounded-lg border transition-all duration-200 text-left ${
                       formData.skillLevel === skill.id
                         ? 'bg-blue-500/20 border-blue-500 text-blue-200'
                         : 'bg-white/5 border-white/20 text-gray-300 hover:bg-white/10 hover:border-white/30'
@@ -494,8 +494,8 @@ I want to create this project. Please help me draft comprehensive specifications
             </div>
 
             {/* Spec Selector */}
-            <div>
-              <label className="block text-sm font-medium text-gray-200 mb-3">
+            <div className="flex-1 min-h-0">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Select a Project to Continue
               </label>
               <SpecSelector 
@@ -505,7 +505,7 @@ I want to create this project. Please help me draft comprehensive specifications
             </div>
 
             {/* Continue Button */}
-            <div className="pt-4 flex justify-center">
+            <div className="pt-2 flex justify-center">
               <button
                 onClick={handleStart}
                 disabled={!selectedSpec || !formData.skillLevel}

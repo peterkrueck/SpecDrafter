@@ -84,17 +84,17 @@ const SpecSelector = ({ socket, onSelectSpec }) => {
 
   return (
     <div className="space-y-4">
-      <div className="text-sm text-gray-400 mb-4">
+      <div className="text-sm text-gray-400 mb-2">
         Found {specs.length} existing specification{specs.length !== 1 ? 's' : ''}
       </div>
       
-      <div className="grid gap-3 max-h-96 overflow-y-auto pr-2">
+      <div className="grid gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
         {specs.map((spec) => (
           <div
             key={spec.projectName}
             onClick={() => handleSpecSelect(spec)}
             className={`
-              p-4 rounded-lg backdrop-blur-lg cursor-pointer
+              p-3 rounded-lg backdrop-blur-lg cursor-pointer
               transition-all duration-200
               ${selectedSpec?.projectName === spec.projectName
                 ? 'bg-blue-500/20 border border-blue-400/50'
@@ -104,14 +104,14 @@ const SpecSelector = ({ socket, onSelectSpec }) => {
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileText className="w-5 h-5 text-blue-400" />
-                  <h3 className="font-semibold text-white">{spec.projectName}</h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <FileText className="w-4 h-4 text-blue-400" />
+                  <h3 className="font-medium text-white text-sm">{spec.projectName}</h3>
                 </div>
                 
-                <div className="flex items-center gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-4 text-xs text-gray-400">
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-3 h-3" />
                     {formatDate(spec.lastModified)}
                   </span>
                   <span>{formatFileSize(spec.size)}</span>
@@ -120,7 +120,7 @@ const SpecSelector = ({ socket, onSelectSpec }) => {
               
               {selectedSpec?.projectName === spec.projectName && (
                 <div className="text-blue-400">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>

@@ -62,6 +62,28 @@
     @apply bg-purple-500/60;
   }
   
+  /* Custom Scrollbar (Generic) */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-white/20 rounded-full transition-colors duration-200;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/30;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:active {
+    @apply bg-white/40;
+  }
+  
   /* Firefox Scrollbar Support */
   .scrollbar-chat {
     scrollbar-width: thin;
@@ -71,6 +93,11 @@
   .scrollbar-collab {
     scrollbar-width: thin;
     scrollbar-color: rgba(168, 85, 247, 0.2) transparent;
+  }
+  
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   }
   
   /* Smooth Scrolling */
