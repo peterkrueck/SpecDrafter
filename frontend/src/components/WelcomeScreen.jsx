@@ -204,10 +204,11 @@ I want to create this project. Please help me draft comprehensive specifications
 
   return (
     <div className="min-h-screen flex items-start justify-center px-6 pt-0 pb-6">
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl p-6 max-w-4xl w-full max-h-[100vh] overflow-y-auto">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white">SpecDrafter</h1>
-        </div>
+      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl max-w-4xl w-full max-h-[100vh] flex flex-col">
+        <div className="flex-1 overflow-y-auto p-6 pb-0">
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-white">SpecDrafter</h1>
+          </div>
 
         {/* Mode Toggle */}
         <div className="flex justify-center mb-4">
@@ -407,17 +408,6 @@ I want to create this project. Please help me draft comprehensive specifications
               <p className="text-red-400 text-sm mt-1">{errors.description}</p>
             )}
           </div>
-
-          {/* Start Button */}
-          <div className="pt-4 flex justify-center">
-            <button
-              onClick={handleStart}
-              disabled={!formData.projectName || !formData.skillLevel || formData.platforms.length === 0 || !formData.description}
-              className="w-full max-w-md bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
-            >
-              Start Drafting Specifications
-            </button>
-          </div>
         </div>
         ) : (
           /* Existing Project Mode */
@@ -527,19 +517,32 @@ I want to create this project. Please help me draft comprehensive specifications
                 onSelectSpec={handleSpecSelect}
               />
             </div>
+          </div>
+        )}
+        </div>
 
-            {/* Continue Button */}
-            <div className="pt-2 flex justify-center">
+        {/* Sticky Footer with Action Button */}
+        <div className="sticky bottom-0 bg-white/10 backdrop-blur-xl border-t border-white/20 p-6 rounded-b-2xl">
+          <div className="flex justify-center">
+            {mode === 'new' ? (
+              <button
+                onClick={handleStart}
+                disabled={!formData.projectName || !formData.skillLevel || formData.platforms.length === 0 || !formData.description}
+                className="w-full max-w-md bg-gradient-to-r from-rose-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-rose-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
+              >
+                Start Drafting Specifications
+              </button>
+            ) : (
               <button
                 onClick={handleStart}
                 disabled={!selectedSpec || !formData.skillLevel}
-                className="w-full max-w-md bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
+                className="w-full max-w-md bg-gradient-to-r from-rose-500 to-purple-600 text-white font-semibold py-4 rounded-lg hover:from-rose-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
               >
                 Continue with {selectedSpec?.projectName || 'Selected Project'}
               </button>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
       </div>
     </div>
