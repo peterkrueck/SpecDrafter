@@ -370,6 +370,16 @@ function setupOrchestratorHandlers() {
     io.emit('spec_writing_started', data);
   });
   
+  orchestrator.on('ai_collaboration_tool_usage', (data) => {
+    logger.info('🔧 AI tool usage for visual feedback', { from: data.from, tool: data.toolName, toolId: data.toolId });
+    io.emit('ai_collaboration_tool_usage', data);
+  });
+  
+  orchestrator.on('ai_collaboration_tools_complete', (data) => {
+    logger.info('✅ AI tools complete', { from: data.from });
+    io.emit('ai_collaboration_tools_complete', data);
+  });
+  
   orchestrator.on('processes_stopped', () => {
     logger.info('Processes stopped event from orchestrator');
     io.emit('processes_stopped');

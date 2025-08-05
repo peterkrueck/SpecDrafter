@@ -124,11 +124,64 @@ class DualProcessOrchestrator extends EventEmitter {
           timestamp: new Date().toISOString()
         });
       }
+      
+      // Only emit specific tool usage for visual feedback in collaboration view
+      const allowedToolsForUI = [
+        'Task', 'WebSearch', 'WebFetch', 'Read', 'Write', 'Edit', 'MultiEdit',
+        'mcp__context7__get-library-docs', 'mcp__deepwiki__ask_question'
+      ];
+      
+      if (allowedToolsForUI.includes(data.toolName)) {
+        let description = '';
+        switch (data.toolName) {
+          case 'Task':
+            description = `Running task: ${data.toolInput?.description || 'Complex task'}`;
+            break;
+          case 'WebSearch':
+            description = `Searching web for: ${data.toolInput?.query || 'information'}`;
+            break;
+          case 'WebFetch':
+            description = `Fetching content from: ${data.toolInput?.url || 'web resource'}`;
+            break;
+          case 'Write':
+            description = `Writing to: ${data.toolInput?.file_path?.split('/').pop() || 'file'}`;
+            break;
+          case 'Edit':
+          case 'MultiEdit':
+            description = `Editing: ${data.toolInput?.file_path?.split('/').pop() || 'file'}`;
+            break;
+          case 'Read':
+            description = `Reading: ${data.toolInput?.file_path?.split('/').pop() || 'file'}`;
+            break;
+          case 'mcp__context7__get-library-docs':
+            description = `Fetching documentation for: ${data.toolInput?.context7CompatibleLibraryID || 'library'}`;
+            break;
+          case 'mcp__deepwiki__ask_question':
+            description = `Asking about: ${data.toolInput?.repoName || 'repository'}`;
+            break;
+        }
+        
+        this.emit('ai_collaboration_tool_usage', {
+          from: 'Discovery AI',
+          toolName: data.toolName,
+          toolId: data.toolId,
+          description: description,
+          timestamp: new Date().toISOString(),
+          isSystemMessage: true
+        });
+      }
+      
       return;
     }
     
     if (data.type === 'assistant_response') {
       const textContent = data.content;
+      
+      // Emit tools complete event since assistant is now responding
+      this.emit('ai_collaboration_tools_complete', {
+        from: 'Discovery AI',
+        timestamp: new Date().toISOString()
+      });
       
       // Store Discovery AI response in conversation history
       this.conversationHistory.push({
@@ -208,16 +261,70 @@ class DualProcessOrchestrator extends EventEmitter {
 
     // Handle messages from Claude SDK
     if (data.type === 'tool_use') {
-      // Ignore tool usage events from Review AI
-      this.logger.debug('Tool usage from Review AI (ignoring)', {
+      // Emit Review AI tool usage for visual feedback in collaboration view
+      this.logger.info('🔧 Review AI tool usage detected', {
         toolName: data.toolName,
         toolId: data.toolId
       });
+      
+      // Only emit specific tool usage for visual feedback
+      const allowedReviewTools = [
+        'Task', 'WebSearch', 'WebFetch', 'Read', 'Write', 'Edit', 'MultiEdit',
+        'mcp__context7__get-library-docs', 'mcp__deepwiki__ask_question'
+      ];
+      
+      if (allowedReviewTools.includes(data.toolName)) {
+        let description = '';
+        switch (data.toolName) {
+          case 'Task':
+            description = `Running analysis task: ${data.toolInput?.description || 'Complex analysis'}`;
+            break;
+          case 'WebSearch':
+            description = `Searching web for: ${data.toolInput?.query || 'information'}`;
+            break;
+          case 'WebFetch':
+            description = `Fetching content from: ${data.toolInput?.url || 'web resource'}`;
+            break;
+          case 'Read':
+            description = `Reading file: ${data.toolInput?.file_path?.split('/').pop() || 'file'}`;
+            break;
+          case 'Write':
+            description = `Writing to: ${data.toolInput?.file_path?.split('/').pop() || 'file'}`;
+            break;
+          case 'Edit':
+          case 'MultiEdit':
+            description = `Editing: ${data.toolInput?.file_path?.split('/').pop() || 'file'}`;
+            break;
+          case 'mcp__context7__get-library-docs':
+            description = `Fetching documentation for: ${data.toolInput?.context7CompatibleLibraryID || 'library'}`;
+            break;
+          case 'mcp__deepwiki__ask_question':
+            description = `Asking about: ${data.toolInput?.repoName || 'repository'}`;
+            break;
+        }
+        
+        // Emit as a special collaboration message for visual feedback
+        this.emit('ai_collaboration_tool_usage', {
+          from: 'Review AI',
+          toolName: data.toolName,
+          toolId: data.toolId,
+          description: description,
+          timestamp: new Date().toISOString(),
+          isSystemMessage: true
+        });
+      }
+      
       return;
     }
     
     if (data.type === 'assistant_response') {
       const textContent = data.content;
+      
+      // Emit tools complete event since assistant is now responding
+      this.emit('ai_collaboration_tools_complete', {
+        from: 'Review AI',
+        timestamp: new Date().toISOString()
+      });
       
       // ALL Review AI output goes to Discovery AI via collaboration channel
       this.logger.info('🤖➡️🤖 Review AI output always routes to Discovery AI', { 

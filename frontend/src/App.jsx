@@ -17,6 +17,7 @@ function App() {
   const [currentModel, setCurrentModel] = useState(null);
   const [availableModels, setAvailableModels] = useState([]);
   const [projectInfo, setProjectInfo] = useState(null);
+  const [activeToolId, setActiveToolId] = useState(null);
   
   const { socket, connected } = useSocket();
   
@@ -88,6 +89,25 @@ function App() {
         content: data.content,
         timestamp: data.timestamp
       }]);
+    });
+    
+    socket.on('ai_collaboration_tool_usage', (data) => {
+      // Set this tool as active
+      setActiveToolId(data.toolId);
+      
+      setCollaboration(prev => [...prev, {
+        from: data.from,
+        content: data.description,
+        timestamp: data.timestamp,
+        isSystemMessage: true,
+        toolName: data.toolName,
+        toolId: data.toolId
+      }]);
+    });
+    
+    socket.on('ai_collaboration_tools_complete', (data) => {
+      // Clear active tool when assistant responds
+      setActiveToolId(null);
     });
     
     socket.on('ai_collaboration_typing', (data) => {
@@ -169,6 +189,8 @@ function App() {
       socket.off('typing_indicator');
       socket.off('collaboration_detected');
       socket.off('ai_collaboration_message');
+      socket.off('ai_collaboration_tool_usage');
+      socket.off('ai_collaboration_tools_complete');
       socket.off('ai_collaboration_typing');
       socket.off('spec_writing_started');
       socket.off('spec_file_generated');
@@ -250,6 +272,7 @@ function App() {
           specContent={specContent}
           typingState={collaborationTypingState}
           isGeneratingSpec={isGeneratingSpec}
+          activeToolId={activeToolId}
         />
       </div>
       
