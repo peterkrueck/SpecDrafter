@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import TypingIndicator from './TypingIndicator';
+import { filterThinkingTags } from '../utils/filterThinkingTags';
 
 function CollaborationView({ collaboration, typingState, activeToolId }) {
   const collaborationEndRef = useRef(null);
@@ -88,7 +89,7 @@ function CollaborationView({ collaboration, typingState, activeToolId }) {
                         {msg.from} → {msg.to}
                       </div>
                       <div className="text-sm text-gray-100 whitespace-pre-line">
-                        {msg.content}
+                        {filterThinkingTags(msg.content)}
                       </div>
                       <div className="text-xs text-gray-400 mt-2">
                         {new Date(msg.timestamp).toLocaleTimeString()}

@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import ClaudeSDKManager from './claude-sdk-manager.js';
+import ClaudeMessageParser from './claude-message-parser.js';
 import { createLogger } from './logger.js';
 import { getDefaultModel, getModelById } from './models.js';
 import path from 'path';
@@ -13,6 +14,9 @@ class DualProcessOrchestrator extends EventEmitter {
   constructor(modelConfig = null) {
     super();
     this.logger = createLogger('ORCHESTRATOR');
+    
+    // Initialize message parser for filtering thinking tags
+    this.messageParser = new ClaudeMessageParser();
     
     // Model configuration - both processes use the same model
     this.currentModelConfig = modelConfig || getDefaultModel();
@@ -175,7 +179,10 @@ class DualProcessOrchestrator extends EventEmitter {
     }
     
     if (data.type === 'assistant_response') {
-      const textContent = data.content;
+      const rawContent = data.content;
+      
+      // CRITICAL: Filter thinking tags BEFORE any routing logic
+      const textContent = this.messageParser.filterThinkingTags(rawContent);
       
       // Emit tools complete event since assistant is now responding
       this.emit('ai_collaboration_tools_complete', {
@@ -183,14 +190,14 @@ class DualProcessOrchestrator extends EventEmitter {
         timestamp: new Date().toISOString()
       });
       
-      // Store Discovery AI response in conversation history
+      // Store filtered Discovery AI response in conversation history
       this.conversationHistory.push({
         role: 'discovery',
-        content: textContent,
+        content: textContent, // Store filtered content
         timestamp: new Date().toISOString()
       });
       
-      // Check for @review: marker anywhere in the message
+      // Check for @review: marker in FILTERED content only
       const reviewMarkerIndex = textContent.indexOf('@review:');
       
       if (reviewMarkerIndex !== -1) {
@@ -318,7 +325,10 @@ class DualProcessOrchestrator extends EventEmitter {
     }
     
     if (data.type === 'assistant_response') {
-      const textContent = data.content;
+      const rawContent = data.content;
+      
+      // Filter thinking tags from Review AI output too
+      const textContent = this.messageParser.filterThinkingTags(rawContent);
       
       // Emit tools complete event since assistant is now responding
       this.emit('ai_collaboration_tools_complete', {
@@ -331,11 +341,11 @@ class DualProcessOrchestrator extends EventEmitter {
         contentLength: textContent.length 
       });
       
-      // Emit AI-to-AI collaboration message for the collaboration tab
+      // Emit AI-to-AI collaboration message for the collaboration tab (with filtered content)
       const collaborationData = {
         from: 'Review AI',
         to: 'Discovery AI',
-        content: textContent,
+        content: textContent, // Use filtered content
         timestamp: new Date().toISOString()
       };
       
