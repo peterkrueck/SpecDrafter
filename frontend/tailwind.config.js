@@ -8,7 +8,9 @@ module.exports = {
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
-        'typing': 'typing 1.4s infinite ease-in-out'
+        'typing': 'typing 1.4s infinite ease-in-out',
+        'spin-slow': 'spin 3s linear infinite',
+        'pulse-border': 'pulseBorder 2s ease-in-out infinite'
       },
       keyframes: {
         fadeIn: {
@@ -22,6 +24,10 @@ module.exports = {
         typing: {
           '0%, 60%, 100%': { transform: 'translateY(0)' },
           '30%': { transform: 'translateY(-10px)' }
+        },
+        pulseBorder: {
+          '0%, 100%': { borderColor: 'rgba(59, 130, 246, 0.3)' },
+          '50%': { borderColor: 'rgba(59, 130, 246, 0.6)' }
         }
       }
     },

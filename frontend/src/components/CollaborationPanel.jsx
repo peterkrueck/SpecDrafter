@@ -2,7 +2,7 @@ import React from 'react';
 import CollaborationView from './CollaborationView';
 import SpecView from './SpecView';
 
-function CollaborationPanel({ currentView, setCurrentView, collaboration, specContent, typingState, isGeneratingSpec }) {
+function CollaborationPanel({ currentView, setCurrentView, collaboration, specContent, typingState, isGeneratingSpec, activeToolId }) {
   return (
     <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl flex flex-col h-full overflow-hidden">
       <div className="flex p-4 border-b border-white/10 gap-2 flex-shrink-0">
@@ -29,7 +29,7 @@ function CollaborationPanel({ currentView, setCurrentView, collaboration, specCo
       </div>
       
       {currentView === 'ai-collab' ? (
-        <CollaborationView collaboration={collaboration} typingState={typingState} />
+        <CollaborationView collaboration={collaboration} typingState={typingState} activeToolId={activeToolId} />
       ) : (
         <SpecView content={specContent} isLoading={isGeneratingSpec} />
       )}

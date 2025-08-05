@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import TypingIndicator from './TypingIndicator';
 
-function CollaborationView({ collaboration, typingState }) {
+function CollaborationView({ collaboration, typingState, activeToolId }) {
   const collaborationEndRef = useRef(null);
   
   // Convert AI collaboration messages to a chat-like format
@@ -11,7 +11,10 @@ function CollaborationView({ collaboration, typingState }) {
     to: event.to,
     content: event.content || event.command || 'Communication detected',
     timestamp: event.timestamp || new Date().toISOString(),
-    type: event.type || 'message'
+    type: event.type || 'message',
+    isSystemMessage: event.isSystemMessage || false,
+    toolName: event.toolName,
+    toolId: event.toolId
   }));
 
   const scrollToBottom = () => {
@@ -38,32 +41,62 @@ function CollaborationView({ collaboration, typingState }) {
               className="animate-fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <div className={`rounded-lg p-4 ${
-                msg.from === 'Discovery AI' 
-                  ? 'bg-blue-500/10 border border-blue-500/20' 
-                  : 'bg-orange-500/10 border border-orange-500/20'
-              }`}>
-                <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
-                    msg.from === 'Discovery AI'
-                      ? 'bg-gradient-to-br from-blue-500 to-cyan-500'
-                      : 'bg-gradient-to-br from-orange-500 to-red-500'
-                  }`}>
-                    {msg.from === 'Discovery AI' ? '🔵' : '🔴'}
-                  </div>
-                  <div className="flex-grow">
-                    <div className="text-xs text-gray-300 mb-1">
-                      {msg.from} → {msg.to}
+              {msg.isSystemMessage ? (
+                // Tool usage system message - animate if active
+                <div className={`rounded-lg p-3 transition-all duration-300 ${
+                  msg.toolId === activeToolId 
+                    ? 'bg-gray-700/40 border border-blue-500/50 animate-pulse-border' 
+                    : 'bg-gray-800/30 border border-gray-700/30'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                      msg.toolId === activeToolId
+                        ? 'bg-blue-600/50'
+                        : 'bg-gray-700/50'
+                    }`}>
+                      <span className={`text-xs ${msg.toolId === activeToolId ? 'animate-spin-slow' : ''}`}>⚙️</span>
                     </div>
-                    <div className="text-sm text-gray-100 whitespace-pre-line">
-                      {msg.content}
+                    <div className="flex-grow">
+                      <div className={`text-xs ${
+                        msg.toolId === activeToolId ? 'text-gray-300' : 'text-gray-400'
+                      }`}>
+                        {msg.content}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-400 mt-2">
+                    <div className="text-xs text-gray-500">
                       {new Date(msg.timestamp).toLocaleTimeString()}
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                // Regular AI message
+                <div className={`rounded-lg p-4 ${
+                  msg.from === 'Discovery AI' 
+                    ? 'bg-blue-500/10 border border-blue-500/20' 
+                    : 'bg-orange-500/10 border border-orange-500/20'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
+                      msg.from === 'Discovery AI'
+                        ? 'bg-gradient-to-br from-blue-500 to-cyan-500'
+                        : 'bg-gradient-to-br from-orange-500 to-red-500'
+                    }`}>
+                      {msg.from === 'Discovery AI' ? '🔵' : '🔴'}
+                    </div>
+                    <div className="flex-grow">
+                      <div className="text-xs text-gray-300 mb-1">
+                        {msg.from} → {msg.to}
+                      </div>
+                      <div className="text-sm text-gray-100 whitespace-pre-line">
+                        {msg.content}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-2">
+                        {new Date(msg.timestamp).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           
