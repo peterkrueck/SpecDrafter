@@ -1,9 +1,6 @@
 import React from 'react';
-import { filterThinkingTags } from '../utils/filterThinkingTags';
 
 function Message({ message, isUser, timestamp, speaker }) {
-  // Apply frontend filtering as safety fallback
-  const filteredMessage = filterThinkingTags(message);
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 animate-fade-in`}>
       {!isUser && (
@@ -23,7 +20,7 @@ function Message({ message, isUser, timestamp, speaker }) {
         {!isUser && speaker && (
           <div className="text-xs opacity-70 mb-1">{speaker}</div>
         )}
-        <div className="text-sm leading-7 whitespace-pre-wrap break-words">{filteredMessage}</div>
+        <div className="text-sm leading-7 whitespace-pre-wrap break-words">{message}</div>
         <span className="text-xs opacity-70 mt-2 block">
           {new Date(timestamp).toLocaleTimeString()}
         </span>

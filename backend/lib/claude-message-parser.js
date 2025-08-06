@@ -267,8 +267,8 @@ class ClaudeMessageParser {
     // Clean up any remaining closing tags without opening tags
     filtered = filtered.replace(closingPattern, '');
 
-    // Clean up any double spaces left behind
-    filtered = filtered.replace(/\s\s+/g, ' ').trim();
+    // Clean up multiple spaces (but preserve line breaks)
+    filtered = filtered.replace(/ {2,}/g, ' ').trim();
 
     // Log if we filtered anything
     if (filtered.length !== originalLength) {
