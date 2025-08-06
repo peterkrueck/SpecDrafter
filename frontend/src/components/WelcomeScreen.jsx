@@ -144,7 +144,7 @@ function WelcomeScreen({ onStart, socket }) {
     
     if (selected.length === 0) return '';
     if (selected.length === 1) return `Target Platform: ${selected[0]}`;
-    return `Target Platforms:\n${selected.map(p => `- ${p}`).join('\n')}`;
+    return `Target Platforms:\n${selected.map(p => `• ${p}`).join('\n')}`;
   };
 
   const validateForm = () => {
@@ -196,7 +196,7 @@ function WelcomeScreen({ onStart, socket }) {
         const scopeLabel = projectScopes.find(s => s.id === formData.projectScope)?.label || formData.projectScope;
         const skillLevelText = skillLevels.find(s => s.id === formData.skillLevel)?.label || formData.skillLevel;
         
-        const initialMessage = `Project: ${formData.projectName}
+        const initialMessage = `PROJECT: ${formData.projectName}
 
 Project Scope: ${scopeLabel}
 ${getScopeContext(formData.projectScope)}
