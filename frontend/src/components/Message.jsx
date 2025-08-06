@@ -15,7 +15,7 @@ function Message({ message, isUser, timestamp, speaker }) {
           {speaker === 'Review AI' ? '🔴' : '🔵'}
         </div>
       )}
-      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl ${
+      <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl ${
         isUser 
           ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white border border-slate-600' 
           : 'bg-white/10 border border-white/20 text-gray-100 hover:bg-white/15'
@@ -23,8 +23,8 @@ function Message({ message, isUser, timestamp, speaker }) {
         {!isUser && speaker && (
           <div className="text-xs opacity-70 mb-1">{speaker}</div>
         )}
-        <div className="text-sm leading-relaxed whitespace-pre-line">{filteredMessage}</div>
-        <span className="text-xs opacity-70 mt-1 block">
+        <div className="text-sm leading-7 whitespace-pre-wrap break-words">{filteredMessage}</div>
+        <span className="text-xs opacity-70 mt-2 block">
           {new Date(timestamp).toLocaleTimeString()}
         </span>
       </div>

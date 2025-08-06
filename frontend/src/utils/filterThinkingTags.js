@@ -50,8 +50,8 @@ export function filterThinkingTags(message) {
   // Clean up any remaining closing tags
   filtered = filtered.replace(closingPattern, '');
   
-  // Clean up double spaces
-  filtered = filtered.replace(/\s\s+/g, ' ').trim();
+  // Clean up multiple spaces (but preserve line breaks)
+  filtered = filtered.replace(/ {2,}/g, ' ').trim();
   
   return filtered;
 }
