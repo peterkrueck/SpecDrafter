@@ -60,9 +60,14 @@ class DualProcessOrchestrator extends EventEmitter {
 
     this.discoveryProcess.on('exit', (exitInfo) => {
       this.logger.warn('Discovery process exited', exitInfo);
-      // Clear typing indicators on exit
+      // Clear main chat typing indicator
       this.emit('typing_indicator', { isTyping: false, speaker: 'Discovery AI' });
-      this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
+      
+      // Only clear collaboration typing if NOT in active collaboration
+      if (this.collaborationState === 'discovering') {
+        this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
+      }
+      
       this.emit('process_exit', { process: 'discovery', ...exitInfo });
     });
 
@@ -88,6 +93,8 @@ class DualProcessOrchestrator extends EventEmitter {
 
     this.reviewProcess.on('exit', (exitInfo) => {
       this.logger.warn('Review process exited', exitInfo);
+      // Reset the flag since Review AI is no longer running
+      this.hasReviewBeenTriggered = false;
       // Clear typing indicators on exit
       this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
       this.emit('process_exit', { process: 'review', ...exitInfo });
@@ -364,6 +371,7 @@ class DualProcessOrchestrator extends EventEmitter {
       };
       
       // Stop typing indicator for Review AI BEFORE emitting the message
+      this.logger.info('🔴 Review AI typing indicator', { isTyping: false });
       this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
       
       // Emit AI-to-AI collaboration message for the collaboration tab
@@ -372,8 +380,10 @@ class DualProcessOrchestrator extends EventEmitter {
       // Automatically forward to Discovery AI
       this.activeProcess = 'discovery';
       
-      // Emit typing indicator for Discovery AI receiving feedback
-      this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Discovery AI' });
+      // Emit typing indicator for Discovery AI receiving feedback (with small delay to prevent race condition)
+      setTimeout(() => {
+        this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Discovery AI' });
+      }, 50);
       
       const forwardMessage = `Technical Review feedback:\n\n${textContent}`;
       this.logger.info('🔄 Forwarding Review AI output to Discovery AI', { 
@@ -383,6 +393,9 @@ class DualProcessOrchestrator extends EventEmitter {
       
       // Use spawn to send the message to Discovery AI with "think harder" trigger
       await this.discoveryProcess.spawn(forwardMessage + ' think harder', true);
+      
+      // Stop Discovery AI typing indicator after processing Review feedback
+      this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
       
       // Update collaboration state
       this.collaborationState = 'refining';
@@ -444,6 +457,30 @@ class DualProcessOrchestrator extends EventEmitter {
       content: message,
       timestamp: new Date().toISOString()
     });
+
+    // TEST: Complex technical review request to trigger sub-agents
+    if (message.trim() === "test sub-agents") {
+      const complexReviewRequest = `@review: I need a comprehensive Phase 3 technical architecture review for a new e-commerce platform that needs to support: 
+      1) Real-time inventory tracking across 50+ warehouses
+      2) AI-powered recommendation engine with <100ms response time
+      3) Multi-currency support with real-time exchange rates
+      4) Microservices architecture with both REST and GraphQL APIs
+      5) Support for 1M+ concurrent users during flash sales
+      
+      Please evaluate the feasibility of using: Next.js 14 with App Router, Supabase for backend, Redis for caching, Kubernetes for orchestration, and Stripe for payments. Consider AI-coding tool compatibility, deployment complexity, and long-term maintenance. This is for a well-funded startup expecting rapid growth.`;
+      
+      // Route directly to Discovery AI with review request
+      this.logger.info('🧪 TEST: Sending complex review request to trigger sub-agents');
+      
+      // Ensure we're on discovery process
+      this.activeProcess = 'discovery';
+      
+      // Emit typing indicator as Discovery AI is about to process the message
+      this.emit('typing_indicator', { isTyping: true, speaker: 'Discovery AI' });
+      
+      await this.discoveryProcess.spawn(complexReviewRequest + ' think hard', true);
+      return;
+    }
 
     // ALWAYS route user messages to Discovery AI
     // Review AI is a backend service that doesn't interact with users
@@ -530,9 +567,6 @@ class DualProcessOrchestrator extends EventEmitter {
     // Route the message to the target AI
     if (to === 'review') {
       this.activeProcess = 'review';
-      
-      // Emit typing indicator for Review AI BEFORE the message
-      this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Review AI' });
     }
     
     // Emit the AI-to-AI message for the collaboration tab (after typing indicator)
@@ -559,15 +593,45 @@ class DualProcessOrchestrator extends EventEmitter {
         this.logger.info('🚀 Starting Review AI on demand for first review request', {
           hasThinkingTrigger: true
         });
-        // Append "think harder" trigger for AI reasoning mode
-        await this.reviewProcess.spawn(messageToSend + ' think harder', false); // false = not continue, this is the first message
+        
+        try {
+          // Add delay to ensure frontend processes Discovery exit first
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Emit typing indicator right before Review AI starts processing
+          this.logger.info('🔴 Review AI typing indicator', { isTyping: true });
+          this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Review AI' });
+          
+          // Append "think harder" trigger for AI reasoning mode
+          await this.reviewProcess.spawn(messageToSend + ' think harder', false); // false = not continue, this is the first message
+        } catch (error) {
+          this.logger.error('Failed to start Review AI', { error: error.message });
+          // Clear typing indicator on error
+          this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
+          throw error;
+        }
       } else {
         this.logger.info('🔄 Routing AI message to Review AI', { 
           messageLength: messageToSend.length,
           hasThinkingTrigger: true 
         });
-        // Append "think harder" trigger for AI reasoning mode
-        await this.reviewProcess.spawn(messageToSend + ' think harder', true); // true = continue existing session
+        
+        try {
+          // Add delay to ensure frontend processes Discovery exit first
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Emit typing indicator right before Review AI processes
+          this.logger.info('🔴 Review AI typing indicator', { isTyping: true });
+          this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Review AI' });
+          
+          // Append "think harder" trigger for AI reasoning mode
+          await this.reviewProcess.spawn(messageToSend + ' think harder', true); // true = continue existing session
+        } catch (error) {
+          this.logger.error('Failed to send message to Review AI', { error: error.message });
+          // Clear typing indicator on error
+          this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
+          throw error;
+        }
       }
     } else if (to === 'discovery') {
       this.activeProcess = 'discovery';
