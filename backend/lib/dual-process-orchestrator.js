@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import ClaudeSDKManager from './claude-sdk-manager.js';
 import ClaudeMessageParser from './claude-message-parser.js';
+import messageSplitter from './message-splitter.js';
 import { createLogger } from './logger.js';
 import { getDefaultModel, getModelById } from './models.js';
 import path from 'path';
@@ -197,13 +198,26 @@ class DualProcessOrchestrator extends EventEmitter {
         timestamp: new Date().toISOString()
       });
       
-      // Check for @review: marker in FILTERED content only
-      const reviewMarkerIndex = textContent.indexOf('@review:');
+      // Use the message splitter for consistent splitting logic
+      const splitResult = messageSplitter.split(textContent);
+      
+      // Extract the same variables for backward compatibility
+      const reviewMarkerIndex = splitResult.markerIndex;
+      const beforeReview = splitResult.beforeMarker;
+      const afterReview = splitResult.afterMarker;
+      
+      // Add comprehensive logging for debugging
+      this.logger.info('📊 Message split decision', {
+        hasMarker: splitResult.hasMarker,
+        markerPosition: splitResult.markerIndex,
+        markerType: splitResult.markerType,
+        stats: splitResult.stats,
+        beforePreview: beforeReview ? beforeReview.substring(0, 50) : '',
+        afterPreview: afterReview ? afterReview.substring(0, 50) : ''
+      });
       
       if (reviewMarkerIndex !== -1) {
         // Split the message: before @review: goes to user, after goes to Review AI
-        const beforeReview = textContent.substring(0, reviewMarkerIndex).trim();
-        const afterReview = textContent.substring(reviewMarkerIndex);
         
         this.logger.info('🔄 @review: marker found, splitting message', {
           markerPosition: reviewMarkerIndex,
@@ -228,8 +242,8 @@ class DualProcessOrchestrator extends EventEmitter {
         
         // Hide chat typing indicator since we're starting AI collaboration
         this.emit('hide_chat_typing', { speaker: 'Discovery AI' });
-        // Show Discovery AI typing in collaboration panel
-        this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Discovery AI' });
+        // Stop Discovery AI typing in collaboration panel (it just finished)
+        this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
         
         // Send everything from @review: onward to Review AI
         this.handleAIToAICommunication('discovery', 'review', afterReview);
@@ -349,10 +363,11 @@ class DualProcessOrchestrator extends EventEmitter {
         timestamp: new Date().toISOString()
       };
       
-      this.emit('ai_collaboration_message', collaborationData);
-      
-      // Stop typing indicator for Review AI
+      // Stop typing indicator for Review AI BEFORE emitting the message
       this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Review AI' });
+      
+      // Emit AI-to-AI collaboration message for the collaboration tab
+      this.emit('ai_collaboration_message', collaborationData);
       
       // Automatically forward to Discovery AI
       this.activeProcess = 'discovery';
@@ -512,14 +527,19 @@ class DualProcessOrchestrator extends EventEmitter {
       contentLength: collaborationData.content.length
     });
     
-    this.emit('ai_collaboration_message', collaborationData);
-    
     // Route the message to the target AI
     if (to === 'review') {
       this.activeProcess = 'review';
       
-      // Emit typing indicator for Review AI
+      // Emit typing indicator for Review AI BEFORE the message
       this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Review AI' });
+    }
+    
+    // Emit the AI-to-AI message for the collaboration tab (after typing indicator)
+    this.emit('ai_collaboration_message', collaborationData);
+    
+    // Continue with review processing
+    if (to === 'review') {
       
       // Check if this is the first review message
       let messageToSend = message;
