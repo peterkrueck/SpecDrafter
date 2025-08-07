@@ -296,9 +296,11 @@ SpecDrafter/
 │   └── workspaces/                 # Claude AI workspaces
 │       ├── requirements-discovery/  # Discovery AI workspace
 │       │   ├── .claude/            # Claude workspace config
+│       │   │   └── settings.json  # Permission settings for Discovery AI
 │       │   └── CLAUDE.md           # Discovery AI instructions
 │       └── technical-review/       # Review AI workspace
 │           ├── .claude/            # Claude workspace config
+│           │   └── settings.json  # Permission settings for Review AI
 │           └── CLAUDE.md           # Review AI instructions
 ├── frontend/                        # Client-side code
 │   ├── index.html                  # Main HTML entry point
@@ -380,7 +382,7 @@ SpecDrafter/
 
 ### SDK Configuration
 - Uses `@anthropic-ai/claude-code` package
-- Permission mode: `bypassPermissions` for automated operation
+- Permission mode: `default` - uses workspace settings for permissions
 - Models: 
   - **Claude 4 Opus** (`claude-opus-4-20250514`): Best for complex reasoning and detailed analysis
   - **Claude 4 Sonnet** (`claude-sonnet-4-20250514`): Balanced performance and speed (default)
@@ -409,6 +411,32 @@ SpecDrafter/
   - Each query gets its own AbortController instance
   - Clean termination without leaving hanging processes
   - Handles AbortError gracefully in catch blocks
+
+### Workspace Permission System
+
+Each AI workspace has its own permission configuration via `.claude/settings.json`:
+
+**Discovery AI Permissions** (`backend/workspaces/requirements-discovery/.claude/settings.json`):
+- **Directory Access**: Limited to `specs/` directory only (via `additionalDirectories`)
+- **Allowed Tools**: Read, Write, LS, Glob, Grep, WebFetch, WebSearch, MCP tools (context7, deepwiki)
+- **Denied Tools**: Bash, Task (no system commands or sub-agents)
+- **Purpose**: Can read and write specifications, research technologies
+
+**Review AI Permissions** (`backend/workspaces/technical-review/.claude/settings.json`):
+- **Directory Access**: Limited to `specs/` directory only (read-only)
+- **Allowed Tools**: Read, LS, Glob, Grep, WebFetch, WebSearch, Task, MCP tools
+- **Denied Tools**: Write, Edit, MultiEdit, Bash (no modifications allowed)
+- **Purpose**: Can read specifications, research, and spawn sub-agents for analysis
+
+**Security Benefits**:
+- Both AIs are sandboxed to the `specs/` directory
+- No access to system commands or sensitive files
+- Review AI cannot modify files (read-only)
+- Discovery AI cannot spawn sub-agents
+- Permissions tracked in version control for consistency
+
+**Local Overrides**:
+Developers can create `.claude/settings.local.json` in workspaces for personal overrides (gitignored)
 
 ### Error Handling
 - SDK errors propagated through EventEmitter pattern
