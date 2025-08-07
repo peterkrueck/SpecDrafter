@@ -157,6 +157,8 @@ The system implements autonomous AI-to-AI communication:
   - Discovery exit events don't clear collaboration typing during active AI-to-AI communication
   - Discovery AI typing stops explicitly after processing Review feedback
   - `hasReviewBeenTriggered` flag resets when Review AI exits to ensure proper state
+  - **Multi-chunk Messages**: Typing indicators persist between message chunks (200ms re-show delay)
+  - Indicators only clear on `result` event when Claude SDK signals query completion
 
 ### Thinking Mode Implementation
 The system automatically triggers Claude's thinking/reasoning mode for deeper analysis:

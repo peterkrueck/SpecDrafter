@@ -40,6 +40,10 @@ class DualProcessOrchestrator extends EventEmitter {
     this.conversationHistory = [];
     this.hasReviewBeenTriggered = false;
     
+    // Typing indicator timeout tracking for multi-chunk messages
+    this.discoveryTypingTimeout = null;
+    this.reviewTypingTimeout = null;
+    
     // Setup event handlers
     this.setupProcessHandlers();
   }
@@ -114,6 +118,30 @@ class DualProcessOrchestrator extends EventEmitter {
       contentType: typeof data.content,
       preview: data.content ? JSON.stringify(data.content).substring(0, 100) : 'No content'
     });
+    
+    // Handle query completion - clear typing indicators
+    if (data.type === 'result') {
+      this.logger.info('Discovery query completed', { 
+        duration: data.metadata?.duration_ms,
+        cost: data.metadata?.total_cost_usd 
+      });
+      
+      // Clear any pending typing timeout
+      if (this.discoveryTypingTimeout) {
+        clearTimeout(this.discoveryTypingTimeout);
+        this.discoveryTypingTimeout = null;
+      }
+      
+      // Permanently clear typing indicator
+      this.emit('typing_indicator', { isTyping: false, speaker: 'Discovery AI' });
+      
+      // Also clear collaboration typing if active
+      if (this.collaborationState !== 'discovering') {
+        this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
+      }
+      
+      return;
+    }
 
     // Handle messages from Claude SDK
     if (data.type === 'tool_use') {
@@ -187,6 +215,12 @@ class DualProcessOrchestrator extends EventEmitter {
     }
     
     if (data.type === 'assistant_response') {
+      // Clear any pending typing timeout since we got a new chunk
+      if (this.discoveryTypingTimeout) {
+        clearTimeout(this.discoveryTypingTimeout);
+        this.discoveryTypingTimeout = null;
+      }
+      
       const rawContent = data.content;
       
       // CRITICAL: Filter thinking tags BEFORE any routing logic
@@ -249,8 +283,7 @@ class DualProcessOrchestrator extends EventEmitter {
         
         // Hide chat typing indicator since we're starting AI collaboration
         this.emit('hide_chat_typing', { speaker: 'Discovery AI' });
-        // Stop Discovery AI typing in collaboration panel (it just finished)
-        this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
+        // Note: Don't stop collaboration typing here - wait for 'result' event
         
         // Send everything from @review: onward to Review AI
         this.handleAIToAICommunication('discovery', 'review', afterReview);
@@ -258,11 +291,7 @@ class DualProcessOrchestrator extends EventEmitter {
       }
       
       // No @review: marker found, emit entire message to user
-      
-      // Emit typing stopped for AI collaboration if we were in collaboration
-      if (this.activeProcess === 'discovery' && this.collaborationState !== 'discovering') {
-        this.emit('ai_collaboration_typing', { isTyping: false, speaker: 'Discovery AI' });
-      }
+      // Note: Don't clear typing indicators here - more chunks may be coming
       
       // Emit to frontend (this goes to users)
       this.logger.info('📤 Sending message to USER via chat panel', {
@@ -276,6 +305,11 @@ class DualProcessOrchestrator extends EventEmitter {
         metadata: data.metadata,
         timestamp: new Date().toISOString()
       });
+      
+      // Re-show typing indicator after a brief pause (expecting more chunks)
+      this.discoveryTypingTimeout = setTimeout(() => {
+        this.emit('typing_indicator', { isTyping: true, speaker: 'Discovery AI' });
+      }, 200); // 200ms pause between chunks
 
     }
   }
@@ -399,6 +433,11 @@ class DualProcessOrchestrator extends EventEmitter {
       
       // Update collaboration state
       this.collaborationState = 'refining';
+      
+      // Re-show typing indicator after a brief pause (expecting more chunks)
+      this.reviewTypingTimeout = setTimeout(() => {
+        this.emit('ai_collaboration_typing', { isTyping: true, speaker: 'Review AI' });
+      }, 200); // 200ms pause between chunks
       
       this.emit('collaboration_detected', {
         type: 'feedback_ready',
@@ -709,12 +748,33 @@ class DualProcessOrchestrator extends EventEmitter {
 
   async shutdown() {
     this.logger.info('Shutting down orchestrator');
+    
+    // Clear any pending typing timeouts
+    if (this.discoveryTypingTimeout) {
+      clearTimeout(this.discoveryTypingTimeout);
+      this.discoveryTypingTimeout = null;
+    }
+    if (this.reviewTypingTimeout) {
+      clearTimeout(this.reviewTypingTimeout);
+      this.reviewTypingTimeout = null;
+    }
+    
     await this.discoveryProcess.kill();
     await this.reviewProcess.kill();
   }
 
   async stopAllProcesses() {
     this.logger.info('Stopping all AI processes immediately');
+    
+    // Clear any pending typing timeouts
+    if (this.discoveryTypingTimeout) {
+      clearTimeout(this.discoveryTypingTimeout);
+      this.discoveryTypingTimeout = null;
+    }
+    if (this.reviewTypingTimeout) {
+      clearTimeout(this.reviewTypingTimeout);
+      this.reviewTypingTimeout = null;
+    }
     
     // Kill both processes
     await this.discoveryProcess.kill();
