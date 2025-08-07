@@ -43,8 +43,7 @@ class ClaudeSDKManager extends EventEmitter {
         cwd: this.workspacePath,
         model: this.currentModel,
         fallbackModel: this.fallbackModel,
-        permissionMode: 'bypassPermissions', // For automated process
-        allowedTools: ['Read', 'Write', 'Edit', 'MultiEdit', 'Bash', 'Grep', 'Glob', 'LS', 'WebFetch', 'WebSearch', 'Task'],
+        permissionMode: 'default', // Use workspace settings.json for permissions
         maxTurns: 10,
         outputFormat: 'stream-json', // Enable detailed streaming events including tool usage
         abortController: this.abortController, // Pass AbortController to query

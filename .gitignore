@@ -63,8 +63,9 @@ specs/*/
 # Express server temp files
 sessions/
 
-# Claude configuration
-.claude/
+# Claude configuration (root only, not workspace .claude directories)
+/.claude/
+backend/workspaces/*/.claude/settings.local.json
 
 # Project documentation (excluded as requested)
 REDDIT_POST.md
