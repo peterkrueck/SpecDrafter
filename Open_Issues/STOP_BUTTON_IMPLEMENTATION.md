@@ -1,10 +1,13 @@
 # Stop Button Implementation - Complete Investigation
 
-**Last Updated**: Session persistence investigation complete - original immediate abort is correct
+**Issue Status**: ⚠️ **Disabled via Feature Flag**  
+**Last Updated**: Feature flag implemented to disable stop button until SDK limitation is resolved  
+**Location**: `frontend/src/components/ChatPanel.jsx` line 9  
+**To Enable**: Set `ENABLE_STOP_BUTTON = true` (at your own risk)
 
 ## Executive Summary
 
-After extensive investigation and multiple implementation attempts, we discovered that **the original immediate abort approach is correct**. Claude SDK sessions cannot be preserved when aborted, regardless of timing strategies. The system must accept context loss and start fresh after stops.
+After extensive investigation and multiple implementation attempts, we discovered that **Claude SDK sessions cannot be preserved when aborted**. The stop button functionality works but causes context loss. We've implemented a feature flag to disable it while preserving all code for future re-enablement when the SDK limitation is resolved.
 
 ## Problem Statement
 

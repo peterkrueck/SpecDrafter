@@ -363,11 +363,11 @@ SpecDrafter/
 - Auto-reconnection built-in for resilience
 - Each Claude process maintains stateful conversations
 - Session IDs preserved for conversation continuity
-- **Stop Button**: Users can immediately terminate both AI processes mid-response
-  - Appears only when AI is actively typing
-  - Uses AbortController to cleanly cancel Claude SDK queries
-  - Clears all typing indicators in both panels
-  - Allows immediate user input without waiting
+- **Stop Button**: Currently disabled via feature flag (`ENABLE_STOP_BUTTON = false` in ChatPanel.jsx)
+  - When enabled: Terminates both AI processes mid-response
+  - Uses AbortController to cancel Claude SDK queries
+  - Disabled due to Claude SDK session preservation limitations (see STOP_BUTTON_IMPLEMENTATION.md)
+  - To re-enable: Set `ENABLE_STOP_BUTTON = true` when session preservation is fixed
 
 ### Styling Approach
 - Tailwind CSS with FreigeistAI-inspired design

@@ -191,6 +191,17 @@ DEBUG=true
 
 **A:** Absolutely! SpecDrafter adapts its communication style based on your technical background. Non-technical users get plain English explanations, while developers can dive into technical details.
 
+**Q: How can I contribute to SpecDrafter?**
+
+**A:** We welcome contributions in many ways:
+- **Code Contributions**: Submit PRs for bug fixes, features, or improvements
+- **Documentation**: Help improve docs, add examples, or translate content
+- **Testing & Feedback**: Use SpecDrafter and share your experience
+- **Report Issues**: Found a bug? Let us know!
+- **Feature Ideas**: Share your ideas for making SpecDrafter better
+
+Check the `Open_Issues/` folder to see documented challenges where we'd especially appreciate help. Each file contains detailed investigation notes that can help you understand the codebase better.
+
 
 
 ## License

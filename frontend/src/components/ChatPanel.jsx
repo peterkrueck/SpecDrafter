@@ -4,6 +4,10 @@ import TypingIndicator from './TypingIndicator';
 import { MODEL_STORAGE_KEY } from '../config/models.js';
 
 function ChatPanel({ messages, setMessages, typingState, collaborationTypingState, socket, projectData, projectInfo, onResetSession, currentModel, availableModels, isGeneratingSpec, setIsGeneratingSpec }) {
+  // Feature flag - set to true when stop button session preservation is fixed
+  // See STOP_BUTTON_IMPLEMENTATION.md for investigation details
+  const ENABLE_STOP_BUTTON = false; // TODO: Re-enable when Claude SDK session preservation is resolved
+  
   const [inputValue, setInputValue] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
@@ -263,7 +267,8 @@ After writing, ask @review: to validate that this technical architecture and tec
           />
           <div className="flex flex-col gap-2">
             {/* Single button slot - either Stop or Create Spec */}
-            {(typingState.isTyping || collaborationTypingState.isTyping) ? (
+            {ENABLE_STOP_BUTTON && (typingState.isTyping || collaborationTypingState.isTyping) ? (
+              // Stop button when feature is enabled and AI is typing
               <button
                 onClick={handleStopAI}
                 disabled={isStopping}
@@ -287,12 +292,17 @@ After writing, ask @review: to validate that this technical architecture and tec
                   </>
                 )}
               </button>
-            ) : canGenerateSpec ? (
+            ) : (projectData && projectInfo) ? (
+              // Always show Create Spec button when project exists, disabled when conditions not met
               <button 
                 onClick={handleGenerateSpec}
                 disabled={!canGenerateSpec}
                 className="px-6 py-2 bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 w-[180px] justify-center h-10"
-                title="Generate and review specification"
+                title={!canGenerateSpec ? 
+                  (typingState.isTyping || collaborationTypingState.isTyping) ? "Wait for AI to finish responding" : 
+                  messages.length === 0 ? "Start a conversation first" : 
+                  "Cannot generate spec at this time" 
+                  : "Generate and review specification"}
               >
                 {isGeneratingSpec ? (
                   <>
@@ -312,6 +322,7 @@ After writing, ask @review: to validate that this technical architecture and tec
                 )}
               </button>
             ) : (
+              // Empty placeholder only when no project loaded yet
               <div className="h-10 w-[180px]"></div>
             )}
             <button
