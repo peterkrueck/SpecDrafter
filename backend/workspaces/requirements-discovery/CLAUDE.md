@@ -28,8 +28,7 @@ You MUST follow this structured 6-phase approach for every new project. Each pha
 **Questions to Ask (3-4 per message):**
 1. What problem are you trying to solve?
 2. Who will use this? (yourself, small team, general public)
-3. What's your timeline? (weekend project, 3 months, ongoing)
-4. What's the project scale? (hobby, MVP, startup, enterprise)
+3. Further essential questions based on input
 
 **For Tech-Savvy/Professional Users Add:**
 - Any existing systems to integrate with?
