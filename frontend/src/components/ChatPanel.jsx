@@ -140,7 +140,25 @@ function ChatPanel({ messages, setMessages, typingState, collaborationTypingStat
     const projectName = projectData?.projectName || 'UnknownProject';
     
     // Send the predefined message to Discovery AI with dynamic path
-    const message = `Write the complete technical specification to the markdown file at ${projectInfo.specsDir}/${projectName}/spec.md. Start with the project's core idea/concept, list the core features that define the product, specify the target platform(s) (web, mobile, desktop, etc.), and describe the main theme/styling approach. Then provide implementation details including technical architecture, data models, API endpoints, component structure, and integration points. Avoid timelines, budgets, or unnecessary fluff - concentrate only on the technical aspects of how to build it. After writing, ask @review: to check the file for any missing foundational elements (core idea, features, platform, styling) as well as technical details, implementation gaps, or architectural improvements needed, ending your review request with the word ultrathink. ultrathink`;
+    const message = `Based on everything we've discussed about ${projectName} and its ${projectData?.projectScope || 'project'} scope, synthesize our conversation into a complete technical specification at ${projectInfo.specsDir}/${projectName}/spec.md.
+
+Focus on:
+1. Brief summary of the core concept and essential features we've identified
+2. Definitive technology stack decisions:
+   - Primary languages and runtime versions
+   - Specific frameworks and libraries (exact packages)
+   - Database and storage solutions
+   - Third-party services and APIs
+   - Development and build tools
+3. High-level architecture:
+   - System components and their responsibilities
+   - Data flow and state management approach
+   - Service boundaries and integration patterns
+   - How the chosen technologies interconnect
+
+Write this as the architectural blueprint that emerged from our discussion - be specific and opinionated about technology choices based on the ${projectData?.projectScope || 'project'} scope. No code examples, no alternative options - just the clear technical decisions and architecture we've arrived at.
+
+After writing, ask @review: to validate that this technical architecture and technology stack properly addresses the requirements we've discussed and is appropriate for a ${projectData?.projectScope || 'project'} scope project, checking for any architectural flaws, technology mismatches, or missing critical components, ending your review request with the word ultrathink. ultrathink`;
     
     socket.emit('user_message', { message });
   };
