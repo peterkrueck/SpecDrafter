@@ -10,7 +10,9 @@ module.exports = {
         'slide-up': 'slideUp 0.3s ease-out',
         'typing': 'typing 1.4s infinite ease-in-out',
         'spin-slow': 'spin 3s linear infinite',
-        'pulse-border': 'pulseBorder 2s ease-in-out infinite'
+        'pulse-border': 'pulseBorder 2s ease-in-out infinite',
+        'fadeIn': 'fadeIn 0.3s ease-in-out',
+        'slideUp': 'slideUp 0.4s ease-out'
       },
       keyframes: {
         fadeIn: {

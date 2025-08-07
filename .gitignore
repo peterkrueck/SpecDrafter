@@ -67,5 +67,4 @@ sessions/
 .claude/
 
 # Project documentation (excluded as requested)
-CLAUDE.md
 REDDIT_POST.md

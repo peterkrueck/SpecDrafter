@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ChatPanel from './components/ChatPanel';
 import CollaborationPanel from './components/CollaborationPanel';
 import WelcomeScreen from './components/WelcomeScreen';
+import PromoModal from './components/PromoModal';
 import { useSocket } from './hooks/useSocket';
 
 function App() {
@@ -18,12 +19,31 @@ function App() {
   const [availableModels, setAvailableModels] = useState([]);
   const [projectInfo, setProjectInfo] = useState(null);
   const [activeToolId, setActiveToolId] = useState(null);
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [hasShownPromoThisSession, setHasShownPromoThisSession] = useState(false);
+  const promoTimerRef = useRef(null);
   
   const { socket, connected } = useSocket();
   
   // Timeout refs for clearing stuck typing indicators
   const typingTimeoutRef = useRef(null);
   const collaborationTypingTimeoutRef = useRef(null);
+
+  // Function to trigger promo modal after spec generation/update
+  const triggerPromoModalTimer = () => {
+    const isDismissed = localStorage.getItem('specdrafter-promo-dismissed');
+    if (!isDismissed && !hasShownPromoThisSession) {
+      // Clear any existing timer
+      if (promoTimerRef.current) {
+        clearTimeout(promoTimerRef.current);
+      }
+      
+      promoTimerRef.current = setTimeout(() => {
+        setShowPromoModal(true);
+        setHasShownPromoThisSession(true);
+      }, 30000); // 30 seconds
+    }
+  };
 
   useEffect(() => {
     if (!socket) return;
@@ -146,6 +166,9 @@ function App() {
       });
       setCurrentView('spec');
       setIsGeneratingSpec(false);
+      
+      // Trigger promo modal after 30 seconds
+      triggerPromoModalTimer();
     });
 
     socket.on('spec_file_updated', (data) => {
@@ -158,6 +181,9 @@ function App() {
         lastUpdated: new Date().toISOString() // Force React to detect state change
       });
       // Don't auto-switch view for updates, user might be reading collaboration panel
+      
+      // Trigger promo modal after 30 seconds (also for updates)
+      triggerPromoModalTimer();
     });
 
 
@@ -205,6 +231,7 @@ function App() {
       // Clear timeouts on unmount
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       if (collaborationTypingTimeoutRef.current) clearTimeout(collaborationTypingTimeoutRef.current);
+      if (promoTimerRef.current) clearTimeout(promoTimerRef.current);
     };
   }, [socket]);
 
@@ -281,6 +308,11 @@ function App() {
           Disconnected from server
         </div>
       )}
+      
+      <PromoModal
+        isOpen={showPromoModal}
+        onClose={() => setShowPromoModal(false)}
+      />
     </div>
   );
 }
