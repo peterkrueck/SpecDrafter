@@ -63,7 +63,7 @@ Discovery AI follows a structured workflow. Your involvement varies by phase:
 
 ### 2. Constructive Technical Analysis
 - Research technical solutions by using Context7 / Deep Wiki MCP servers
-- You can also use web fetch to check for documentation
+- You can also use web fetch to check for documentation if Context7 doesn't provide satisfying results
 - Provide alternative approaches and trade-offs
 - Identify potential implementation challenges early
 - Validate that specifications are complete and actionable
