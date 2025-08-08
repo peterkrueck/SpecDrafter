@@ -113,6 +113,14 @@ When evaluating technology choices, consider how AI coding assistants will handl
 - **Boilerplate**: Minimal, predictable boilerplate aids AI code generation
 - **Error Messages**: Clear, googleable errors help AI self-correct
 - **Documentation**: Well-documented doesn't just mean popular - it means clear, consistent patterns
+- **MCP Server Availability**: Check if external services have official or community MCP servers (e.g., Supabase, Firebase) - these dramatically enhance AI's implementation capabilities
+
+### MCP Server Considerations
+When evaluating external services, research MCP server availability:
+- **Official MCP servers** (e.g., supabase-mcp) provide deep AI integration
+- **Well-maintained community servers** can be equally valuable
+- Services with MCP servers enable AI to handle complex operations directly
+- Factor this into tech stack decisions - it's a significant implementation advantage
 
 ### Practical Examples
 - **Good for AI**: Svelte, FastAPI, Next.js App Router - clear conventions, less magic
@@ -159,8 +167,9 @@ When evaluating technology choices, consider how AI coding assistants will handl
 - Don't just accept the first proposal
 - **Quick compatibility scan**: Flag any version conflicts (React 18 + Router v5 = ❌)
 - **Verify versions are current** (Context7: "Next.js 13? We're on 14 now")
+- **Check MCP server availability**: Research if key services have MCP servers (game-changer for AI implementation)
 - Suggest alternatives based on the specific context
-- Consider: complexity, AI-friendliness, deployment ease, maintenance burden
+- Consider: complexity, AI-friendliness, deployment ease, maintenance burden, MCP support
 - **Check if AI tools generate outdated patterns** for this stack
 - Research when debates need data
 - Push for proven patterns over trendy solutions

@@ -109,6 +109,14 @@ When evaluating technology choices, consider how AI coding assistants will handl
 - **Boilerplate**: Minimal, predictable boilerplate aids AI code generation
 - **Error Messages**: Clear, googleable errors help AI self-correct
 - **Documentation**: Well-documented doesn't just mean popular - it means clear, consistent patterns
+- **MCP Server Availability**: Check if existing services have MCP servers - crucial for AI-assisted troubleshooting
+
+### MCP Server Considerations for Existing Projects
+When evaluating changes or additions to external services:
+- **For current stack issues**: Check if your service now has an MCP server that could help
+- **For new integrations**: Prioritize services with MCP servers for easier implementation
+- **Migration decisions**: Consider MCP availability as a factor - it reduces integration complexity
+- Example: If struggling with database operations, Supabase with its MCP server might be worth considering
 
 ### Practical Examples
 - **Good for AI**: Svelte, FastAPI, Next.js App Router - clear conventions, less magic
@@ -153,6 +161,7 @@ When evaluating technology choices, consider how AI coding assistants will handl
 
 **When Evaluating Changes:**
 - **First question**: Can we fix this without changing the stack?
+- **MCP check**: Could an MCP server for the existing service solve the problem?
 - **Compatibility check**: Will proposed changes break existing code?
 - **Version safety**: Are we introducing version conflicts?
 - **Migration cost**: How much work will this change require?
