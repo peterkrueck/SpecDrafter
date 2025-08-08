@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "additionalDirectories": ["../../../../specs"],
+    "allow": [
+      "Read",
+      "LS",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "mcp__context7__*",
+      "mcp__deepwiki__*"
+    ],
+    "deny": ["Write", "Edit", "MultiEdit", "Bash"]
+  }
+}
