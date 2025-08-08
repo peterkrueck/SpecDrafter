@@ -167,69 +167,85 @@ DEBUG=true
 6. **Iterate**: Use the Review AI's feedback to refine requirements
 7. **Export Early**: Download specs as markdown for version control
 
-## FAQ
+## 💬 Frequently Asked Questions
 
-**Q: Can I use SpecDrafter without Claude Code installed?**
+### 🔧 **Can I use SpecDrafter without Claude Code installed?**
 
-**A:** No. SpecDrafter is built with the Claude Code SDK which requires a locally installed Claude Code CLI. You must have Claude Code installed (`npm install -g @anthropic-ai/claude-code`) and connected to your Anthropic account with valid API credentials. The entire dual-AI architecture depends on the Claude Code SDK for managing the AI instances.
+> No. SpecDrafter is built with the Claude Code SDK which requires a locally installed Claude Code CLI. You must have Claude Code installed (`npm install -g @anthropic-ai/claude-code`) and connected to your Anthropic account with valid API credentials. The entire dual-AI architecture depends on the Claude Code SDK for managing the AI instances.
 
-**Q: How is this different from just using Claude or ChatGPT?**
+---
 
-**A:** SpecDrafter implements a dual-AI system where two specialized Claude instances collaborate. Discovery AI focuses on understanding your actual needs while Review AI ensures technical feasibility. You get the benefit of two expert perspectives working together, plus a structured specification process.
+### 🤖 **How is this different from just using Claude or ChatGPT?**
 
-**Q: Can I use this with languages other than English?**
+> SpecDrafter implements a dual-AI system where two specialized Claude instances collaborate. Discovery AI focuses on understanding your actual needs while Review AI ensures technical feasibility. You get the benefit of two expert perspectives working together, plus a structured specification process.
 
-**A:** Currently, SpecDrafter is optimized for English. The AI instructions and prompts are in English, though Claude can understand other languages.
+---
 
-**Q: What happens to my specifications?**
+### 🌍 **Can I use this with languages other than English?**
 
-**A:** All specifications are stored locally in your `specs/` directory. Nothing is sent to external servers except the Claude API calls for AI processing.
+> Currently, SpecDrafter is optimized for English. The AI instructions and prompts are in English, though Claude can understand other languages.
 
-**Q: Can I customize the AI behavior?**
+---
 
-**A:** Yes! Each AI's behavior is controlled by its `CLAUDE.md` file in the workspaces directory. You can modify these to adjust how the AIs interact with users and each other.
+### 📁 **What happens to my specifications?**
 
-**Q: Why two AIs instead of one?**
+> All specifications are stored locally in your `specs/` directory. Nothing is sent to external servers except the Claude API calls for AI processing.
 
-**A:** Separation of concerns. Discovery AI can focus entirely on understanding user needs without getting bogged down in implementation details. Review AI can be brutally honest about technical feasibility without worrying about user relationships. This creates better outcomes than a single AI trying to balance both roles.
+---
 
-**Q: Is this suitable for non-technical users?**
+### ⚙️ **Can I customize the AI behavior?**
 
-**A:** Absolutely! SpecDrafter adapts its communication style based on your technical background. Non-technical users get plain English explanations, while developers can dive into technical details.
+> Yes! Each AI's behavior is controlled by its `CLAUDE.md` file in the workspaces directory. You can modify these to adjust how the AIs interact with users and each other.
 
-**Q: What about security? Can the Claude Code SDK access my files or execute system commands?**
+---
 
-**A:** No. SpecDrafter implements strict security sandboxing for both AI instances:
+### 👥 **Why two AIs instead of one?**
 
-**File System Access:**
+> Separation of concerns. Discovery AI can focus entirely on understanding user needs without getting bogged down in implementation details. Review AI can be brutally honest about technical feasibility without worrying about user relationships. This creates better outcomes than a single AI trying to balance both roles.
+
+---
+
+### 👤 **Is this suitable for non-technical users?**
+
+> Absolutely! SpecDrafter adapts its communication style based on your technical background. Non-technical users get plain English explanations, while developers can dive into technical details.
+
+---
+
+### 🔒 **What about security? Can the Claude Code SDK access my files or execute system commands?**
+
+> **No. SpecDrafter implements strict security sandboxing for both AI instances:**
+
+#### File System Access:
 - Both AIs can ONLY access the `specs/` directory in your project
 - No access to your home directory, system files, or other projects
 - Discovery AI can read/write specifications only
 - Review AI has read-only access (cannot modify any files)
 
-**Tool Restrictions:**
+#### Tool Restrictions:
 - **No shell/bash access** - Neither AI can execute system commands
 - **No arbitrary code execution** - AIs cannot run scripts or programs
 - **Limited to safe operations**: File reading, web searches, and documentation lookups
 - Discovery AI cannot spawn sub-agents (no Task tool)
 - Review AI cannot modify files (no Write/Edit tools)
 
-**What Each AI Can Do:**
-- Discovery AI: Read/write specs, search web, fetch documentation
-- Review AI: Read specs only, analyze code, spawn analysis sub-agents
+#### What Each AI Can Do:
+- **Discovery AI**: Read/write specs, search web, fetch documentation
+- **Review AI**: Read specs only, analyze code, spawn analysis sub-agents
 
-This sandboxing is enforced through Claude Code's permission system (`.claude/settings.json` in each workspace), ensuring the AIs can help you create specifications without any risk to your system or other files. You can verify these restrictions yourself in the `backend/workspaces/` directory.
+> This sandboxing is enforced through Claude Code's permission system (`.claude/settings.json` in each workspace), ensuring the AIs can help you create specifications without any risk to your system or other files. You can verify these restrictions yourself in the `backend/workspaces/` directory.
 
-**Q: How can I contribute to SpecDrafter?**
+---
 
-**A:** We welcome contributions in many ways:
-- **Code Contributions**: Submit PRs for bug fixes, features, or improvements
-- **Documentation**: Help improve docs, add examples, or translate content
-- **Testing & Feedback**: Use SpecDrafter and share your experience
-- **Report Issues**: Found a bug? Let us know!
-- **Feature Ideas**: Share your ideas for making SpecDrafter better
+### 🤝 **How can I contribute to SpecDrafter?**
 
-Check the `Open_Issues/` folder to see documented challenges where we'd especially appreciate help. Each file contains detailed investigation notes that can help you understand the codebase better.
+> We welcome contributions in many ways:
+> - **Code Contributions**: Submit PRs for bug fixes, features, or improvements
+> - **Documentation**: Help improve docs, add examples, or translate content
+> - **Testing & Feedback**: Use SpecDrafter and share your experience
+> - **Report Issues**: Found a bug? Let us know!
+> - **Feature Ideas**: Share your ideas for making SpecDrafter better
+>
+> Check the `Open_Issues/` folder to see documented challenges where we'd especially appreciate help. Each file contains detailed investigation notes that can help you understand the codebase better.
 
 
 
