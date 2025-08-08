@@ -53,7 +53,7 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
 #### 1. Dual-Claude Process Management
 - **ClaudeSDKManager** (`backend/lib/claude-sdk-manager.js`): Manages individual Claude instances using the SDK
 - **DualProcessOrchestrator** (`backend/lib/dual-process-orchestrator.js`): Coordinates between two Claude processes
-- **MessageSplitter** (`backend/lib/message-splitter.js`): Pure function for splitting messages at `@review:` markers
+- **MessageSplitter** (`backend/lib/message-splitter.js`): Context-aware splitter with sentence boundary detection for `@review:` markers
 - **Workspace-based Architecture**: Each Claude instance has mode-specific workspaces with custom CLAUDE.md instructions
 
 #### 2. Claude Instance Roles
@@ -125,8 +125,8 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
 5. Frontend displays in chat panel
 
 **AI-to-AI Communication:**
-1. Discovery AI includes `@review:` marker anywhere in its message
-2. Orchestrator splits the message: content before `@review:` goes to user, content from `@review:` onward goes to Review AI
+1. Discovery AI includes `@review:` marker at a valid sentence boundary
+2. Orchestrator validates and splits: content before `@review:` goes to user, content from `@review:` onward goes to Review AI
 3. Message routed to Review AI via ClaudeSDKManager
 4. `ai_collaboration_message` event emitted to frontend
 5. CollaborationView displays real-time AI conversation
@@ -135,26 +135,36 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
 The system implements autonomous AI-to-AI communication:
 
 **Communication Flow:**
-- `@review:` - Discovery AI sends messages to Review AI (can appear anywhere in the message)
+- `@review:` - Discovery AI sends messages to Review AI (must appear at sentence boundaries)
 - Review AI responses are automatically routed back to Discovery AI (no markers needed)
 
 **Message Routing:**
-1. Discovery AI includes `@review:` marker in message to route to Review AI
+1. Discovery AI includes `@review:` marker at a valid position to route to Review AI
 2. Thinking tags are filtered out BEFORE routing check (prevents `@review:` inside thinking from triggering)
-3. Content before marker goes to user, content from marker onward goes to Review AI
-4. ALL Review AI output is automatically routed to Discovery AI via `ai_collaboration_message`
-5. Review AI operates as a backend service with no direct user interaction
-6. Real-time collaboration appears in CollaborationView.jsx panel
+3. MessageSplitter validates marker position - only triggers at:
+   - Start of message
+   - After newline (start of new line)
+   - After double newline (new paragraph)
+   - After sentence punctuation (. ! ?) followed by space
+4. Markers inside code blocks or mid-sentence are ignored
+5. First valid `@review:` occurrence is used, invalid ones are skipped
+6. Content before marker goes to user, content from marker onward goes to Review AI
+7. ALL Review AI output is automatically routed to Discovery AI via `ai_collaboration_message`
+8. Review AI operates as a backend service with no direct user interaction
+9. Real-time collaboration appears in CollaborationView.jsx panel
 
 **Implementation Details:**
 - Review AI uses lazy initialization - starts only when first needed
-- `MessageSplitter.split()` handles all message splitting logic at `@review:` markers
+- `MessageSplitter.split()` performs context-aware splitting with validation:
+  - Detects code blocks (```code```) and inline code (`code`)
+  - Validates marker appears at sentence boundaries
+  - Returns first valid occurrence, tracks invalid occurrences skipped
 - `handleDiscoveryOutput()` filters thinking tags, uses splitter, then routes messages
 - `handleAIToAICommunication()` processes the Review AI portion of split messages
 - `handleReviewOutput()` filters thinking tags then automatically routes all Review output to Discovery
 - All AI-to-AI communication is logged and displayed in collaboration tab
 - **Thinking Tag Filtering**: Backend `ClaudeMessageParser.filterThinkingTags()` removes all `<thinking>` variations before routing (single source of truth)
-- **Split Decision Logging**: Every routing decision logged with `📊 Message split decision` for debugging
+- **Split Decision Logging**: Every routing decision logged with `📊 Message split decision` including invalid occurrences count
 - **Typing Indicators**: 
   - Main chat uses `typing_indicator` events, collaboration uses `ai_collaboration_typing`
   - 100ms delays prevent race conditions when switching between AI speakers
@@ -513,9 +523,11 @@ Developers can create `.claude/settings.local.json` in workspaces for personal o
 - If Claude doesn't respond: Verify SDK installation and credentials
 - If sessions don't persist: Check session ID handling in ClaudeSDKManager
 - If AI-to-AI communication fails: 
-  - Check @review: marker is present in the message
-  - Verify MessageSplitter.split() is working correctly
-  - Check split decision logs for routing details
+  - Check @review: marker is present at a valid position (sentence boundary)
+  - Verify marker is not inside code blocks or mid-sentence
+  - Check split decision logs for `invalidOccurrences` count
+  - Verify MessageSplitter.split() validation is working correctly
+  - Ensure marker appears after punctuation, newline, or at message start
 - If typing indicators don't show in AI collaboration:
   - Check for `🔴 Review AI typing indicator` logs to verify emission
   - Ensure Discovery process exit doesn't occur during active collaboration (check `collaborationState`)
