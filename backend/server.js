@@ -38,11 +38,13 @@ if (process.env.NODE_ENV === 'production') {
 io.on('connection', (socket) => {
   logger.info('Client connected', { socketId: socket.id, totalClients: io.engine.clientsCount + 1 });
 
-  // Initialize orchestrator if not already initialized
-  if (!orchestrator) {
-    orchestrator = new DualProcessOrchestrator();
-    setupOrchestratorHandlers();
-  }
+  // Don't auto-create orchestrator - wait for explicit mode selection
+  // The orchestrator will be created when either start_processes or 
+  // start_with_existing_spec is called, ensuring we know which mode to use
+  // if (!orchestrator) {
+  //   orchestrator = new DualProcessOrchestrator();
+  //   setupOrchestratorHandlers();
+  // }
 
   // Send current orchestrator status and available models
   if (orchestrator) {
@@ -88,11 +90,16 @@ io.on('connection', (socket) => {
       if (data.modelId && orchestrator) {
         const modelConfig = getModelById(data.modelId);
         if (modelConfig) {
-          // Recreate orchestrator with new model
+          // Recreate orchestrator with new model and 'new' project mode
           await orchestrator.shutdown();
-          orchestrator = new DualProcessOrchestrator(modelConfig);
+          orchestrator = new DualProcessOrchestrator(modelConfig, 'new');
           setupOrchestratorHandlers();
         }
+      } else if (!orchestrator) {
+        // Create orchestrator with 'new' project mode if it doesn't exist
+        const modelConfig = data.modelId ? getModelById(data.modelId) : null;
+        orchestrator = new DualProcessOrchestrator(modelConfig, 'new');
+        setupOrchestratorHandlers();
       }
       
       // Start processes with optional initial message
@@ -189,19 +196,19 @@ io.on('connection', (socket) => {
         return;
       }
       
-      // Create or update orchestrator with model
+      // Create or update orchestrator with model and 'existing' project mode
       if (data.modelId) {
         const modelConfig = getModelById(data.modelId);
         if (modelConfig) {
           if (orchestrator) {
             await orchestrator.shutdown();
           }
-          orchestrator = new DualProcessOrchestrator(modelConfig);
+          orchestrator = new DualProcessOrchestrator(modelConfig, 'existing');
           setupOrchestratorHandlers();
         }
       } else if (!orchestrator) {
-        // Create orchestrator with default model if none exists
-        orchestrator = new DualProcessOrchestrator();
+        // Create orchestrator with default model and 'existing' project mode if none exists
+        orchestrator = new DualProcessOrchestrator(null, 'existing');
         setupOrchestratorHandlers();
       }
       
@@ -472,7 +479,13 @@ server.listen(PORT, () => {
   
   logger.info('Dual-Claude architecture ready');
   logger.info('Workspaces configured:', {
-    requirements: 'workspaces/requirements-discovery/',
-    review: 'workspaces/technical-review/'
+    newProject: {
+      discovery: 'workspaces/new-project/discovery/',
+      review: 'workspaces/new-project/review/'
+    },
+    existingProject: {
+      discovery: 'workspaces/existing-project/discovery/',
+      review: 'workspaces/existing-project/review/'
+    }
   });
 });

@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 class DualProcessOrchestrator extends EventEmitter {
-  constructor(modelConfig = null) {
+  constructor(modelConfig = null, projectMode = 'new') {
     super();
     this.logger = createLogger('ORCHESTRATOR');
     
@@ -21,13 +21,21 @@ class DualProcessOrchestrator extends EventEmitter {
     
     // Model configuration - both processes use the same model
     this.currentModelConfig = modelConfig || getDefaultModel();
-    this.logger.info('Initializing orchestrator with model', { 
-      model: this.currentModelConfig.id 
+    this.projectMode = projectMode; // Store the project mode
+    this.logger.info('Initializing orchestrator with model and mode', { 
+      model: this.currentModelConfig.id,
+      projectMode: this.projectMode
     });
     
-    // Initialize both Claude processes
-    const discoveryPath = path.join(__dirname, '../workspaces/requirements-discovery');
-    const reviewPath = path.join(__dirname, '../workspaces/technical-review');
+    // Initialize both Claude processes with mode-specific workspaces
+    const workspaceBase = projectMode === 'new' ? 'new-project' : 'existing-project';
+    const discoveryPath = path.join(__dirname, `../workspaces/${workspaceBase}/discovery`);
+    const reviewPath = path.join(__dirname, `../workspaces/${workspaceBase}/review`);
+    
+    this.logger.info('Using workspace paths', {
+      discovery: discoveryPath,
+      review: reviewPath
+    });
     
     this.discoveryProcess = new ClaudeSDKManager('discovery', discoveryPath, this.currentModelConfig);
     this.reviewProcess = new ClaudeSDKManager('review', reviewPath, this.currentModelConfig);
@@ -450,9 +458,9 @@ class DualProcessOrchestrator extends EventEmitter {
   async startProcesses(initialMessage = null) {
     this.logger.info('🚀 startProcesses() called', { hasInitialMessage: !!initialMessage });
     
-    // Log workspace paths for debugging
-    const discoveryPath = path.join(__dirname, '../workspaces/requirements-discovery');
-    const reviewPath = path.join(__dirname, '../workspaces/technical-review');
+    // Log workspace paths for debugging - use actual configured paths
+    const discoveryPath = this.discoveryProcess.workspacePath;
+    const reviewPath = this.reviewProcess.workspacePath;
     this.logger.info('🔍 ORCHESTRATOR WORKSPACE DIAGNOSTICS:');
     this.logger.info(`  Discovery AI workspace: ${discoveryPath}`);
     this.logger.info(`  Review AI workspace: ${reviewPath}`);
@@ -739,6 +747,7 @@ class DualProcessOrchestrator extends EventEmitter {
       activeProcess: this.activeProcess,
       collaborationState: this.collaborationState,
       currentModel: this.currentModelConfig,
+      projectMode: this.projectMode,
       processes: {
         discovery: this.discoveryProcess.getStatus(),
         review: this.reviewProcess.getStatus()

@@ -54,16 +54,20 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
 - **ClaudeSDKManager** (`backend/lib/claude-sdk-manager.js`): Manages individual Claude instances using the SDK
 - **DualProcessOrchestrator** (`backend/lib/dual-process-orchestrator.js`): Coordinates between two Claude processes
 - **MessageSplitter** (`backend/lib/message-splitter.js`): Pure function for splitting messages at `@review:` markers
-- **Workspace-based Architecture**: Each Claude instance has its own workspace with custom CLAUDE.md instructions
+- **Workspace-based Architecture**: Each Claude instance has mode-specific workspaces with custom CLAUDE.md instructions
 
 #### 2. Claude Instance Roles
-- **Discovery AI** (workspace: `backend/workspaces/requirements-discovery/`)
+- **Discovery AI** (dynamic workspace based on project mode)
+  - **New Projects**: `backend/workspaces/new-project/discovery/`
+  - **Existing Projects**: `backend/workspaces/existing-project/discovery/`
   - Uses Discovery AI instructions (via CLAUDE.md in its workspace)
   - Focuses on user interaction and requirements gathering
   - Identifies when specifications are ready for review
   - Initiates AI-to-AI communication using `@review:` markers
   
-- **Review AI** (workspace: `backend/workspaces/technical-review/`)
+- **Review AI** (dynamic workspace based on project mode)
+  - **New Projects**: `backend/workspaces/new-project/review/`
+  - **Existing Projects**: `backend/workspaces/existing-project/review/`
   - Backend service that only communicates with Discovery AI
   - Lazy initialization - starts on-demand when Discovery AI needs review
   - Provides technical analysis and feasibility review
@@ -296,14 +300,32 @@ SpecDrafter/
 │   │   ├── claude-message-parser.js # Message parsing utilities
 │   │   └── models.js               # Claude model configuration
 │   └── workspaces/                 # Claude AI workspaces
-│       ├── requirements-discovery/  # Discovery AI workspace
-│       │   ├── .claude/            # Claude workspace config
-│       │   │   └── settings.json  # Permission settings for Discovery AI
-│       │   └── CLAUDE.md           # Discovery AI instructions
-│       └── technical-review/       # Review AI workspace
-│           ├── .claude/            # Claude workspace config
-│           │   └── settings.json  # Permission settings for Review AI
-│           └── CLAUDE.md           # Review AI instructions
+│       ├── new-project/            # Workspaces for new project mode
+│       │   ├── discovery/          # Discovery AI for new projects
+│       │   │   ├── .claude/
+│       │   │   │   └── settings.json
+│       │   │   └── CLAUDE.md
+│       │   └── review/             # Review AI for new projects
+│       │       ├── .claude/
+│       │       │   └── settings.json
+│       │       └── CLAUDE.md
+│       ├── existing-project/       # Workspaces for existing project mode
+│       │   ├── discovery/          # Discovery AI for existing projects
+│       │   │   ├── .claude/
+│       │   │   │   └── settings.json
+│       │   │   └── CLAUDE.md
+│       │   └── review/             # Review AI for existing projects
+│       │       ├── .claude/
+│       │       │   └── settings.json
+│       │       └── CLAUDE.md
+│       ├── requirements-discovery/  # Legacy workspace (kept for reference)
+│       │   ├── .claude/
+│       │   │   └── settings.json
+│       │   └── CLAUDE.md
+│       └── technical-review/       # Legacy workspace (kept for reference)
+│           ├── .claude/
+│           │   └── settings.json
+│           └── CLAUDE.md
 ├── frontend/                        # Client-side code
 │   ├── index.html                  # Main HTML entry point
 │   ├── src/                        # React source code
@@ -352,15 +374,42 @@ SpecDrafter/
 ### Working Directory and Path Context
 **Critical for File Operations**:
 - **Server runs from**: Project root (where the project is cloned)
-- **Discovery AI workspace**: `backend/workspaces/requirements-discovery/`
+- **Discovery AI workspace**: 
+  - New projects: `backend/workspaces/new-project/discovery/`
+  - Existing projects: `backend/workspaces/existing-project/discovery/`
+- **Review AI workspace**:
+  - New projects: `backend/workspaces/new-project/review/`
+  - Existing projects: `backend/workspaces/existing-project/review/`
 - **File watcher monitors**: `specs/**/*.md` relative to project root
 - **Discovery AI receives full paths**: The system provides complete paths in messages
 
 **Why Absolute Paths Matter**:
-- Discovery AI's working directory is deep in the workspace hierarchy
+- Discovery AI's working directory is deep in the workspace hierarchy (now 4 levels deep)
 - Relative paths from AI workspace would create files in wrong location
 - File watcher only monitors the project root `specs/` directory
 - Mismatched paths = files created but never detected
+
+### Mode-Based Workspace Selection
+
+The system dynamically selects workspaces based on how the user starts their session:
+
+**New Project Mode** (User clicks "Start New Project"):
+- Orchestrator created with `projectMode: 'new'`
+- Discovery AI uses: `backend/workspaces/new-project/discovery/`
+- Review AI uses: `backend/workspaces/new-project/review/`
+- Follows full 6-phase discovery workflow in CLAUDE.md
+
+**Existing Project Mode** (User clicks "Continue Existing Project"):
+- Orchestrator created with `projectMode: 'existing'`
+- Discovery AI uses: `backend/workspaces/existing-project/discovery/`
+- Review AI uses: `backend/workspaces/existing-project/review/`
+- Starts with existing specification context
+
+**Implementation Details**:
+- `DualProcessOrchestrator` constructor accepts `projectMode` parameter
+- Workspace paths selected dynamically based on mode
+- Each mode can have completely different CLAUDE.md instructions
+- Currently both modes use identical instructions (can be customized later)
 
 ### Real-time Communication
 - Socket.IO handles all real-time messaging
@@ -416,19 +465,21 @@ SpecDrafter/
 
 ### Workspace Permission System
 
-Each AI workspace has its own permission configuration via `.claude/settings.json`:
+Each AI workspace has its own permission configuration via `.claude/settings.json`. Permissions are identical for new and existing project modes, but the workspace paths differ:
 
-**Discovery AI Permissions** (`backend/workspaces/requirements-discovery/.claude/settings.json`):
-- **Directory Access**: Limited to `specs/` directory only (via `additionalDirectories`)
+**Discovery AI Permissions** (both `new-project/discovery` and `existing-project/discovery`):
+- **Directory Access**: Limited to `specs/` directory only (via `additionalDirectories: ["../../../../specs"]`)
 - **Allowed Tools**: Read, Write, LS, Glob, Grep, WebFetch, WebSearch, MCP tools (context7, deepwiki)
 - **Denied Tools**: Bash, Task (no system commands or sub-agents)
 - **Purpose**: Can read and write specifications, research technologies
 
-**Review AI Permissions** (`backend/workspaces/technical-review/.claude/settings.json`):
-- **Directory Access**: Limited to `specs/` directory only (read-only)
+**Review AI Permissions** (both `new-project/review` and `existing-project/review`):
+- **Directory Access**: Limited to `specs/` directory only (read-only, via `additionalDirectories: ["../../../../specs"]`)
 - **Allowed Tools**: Read, LS, Glob, Grep, WebFetch, WebSearch, Task, MCP tools
 - **Denied Tools**: Write, Edit, MultiEdit, Bash (no modifications allowed)
 - **Purpose**: Can read specifications, research, and spawn sub-agents for analysis
+
+**Note**: The `additionalDirectories` path is now `../../../../specs` (4 levels up) instead of `../../../specs` due to the deeper workspace structure
 
 **Security Benefits**:
 - Both AIs are sandboxed to the `specs/` directory
