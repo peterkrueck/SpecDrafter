@@ -318,14 +318,6 @@ SpecDrafter/
 │       │       ├── .claude/
 │       │       │   └── settings.json
 │       │       └── CLAUDE.md
-│       ├── requirements-discovery/  # Legacy workspace (kept for reference)
-│       │   ├── .claude/
-│       │   │   └── settings.json
-│       │   └── CLAUDE.md
-│       └── technical-review/       # Legacy workspace (kept for reference)
-│           ├── .claude/
-│           │   └── settings.json
-│           └── CLAUDE.md
 ├── frontend/                        # Client-side code
 │   ├── index.html                  # Main HTML entry point
 │   ├── src/                        # React source code
