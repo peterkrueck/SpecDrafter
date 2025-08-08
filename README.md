@@ -197,6 +197,29 @@ DEBUG=true
 
 **A:** Absolutely! SpecDrafter adapts its communication style based on your technical background. Non-technical users get plain English explanations, while developers can dive into technical details.
 
+**Q: What about security? Can the Claude Code SDK access my files or execute system commands?**
+
+**A:** No. SpecDrafter implements strict security sandboxing for both AI instances:
+
+**File System Access:**
+- Both AIs can ONLY access the `specs/` directory in your project
+- No access to your home directory, system files, or other projects
+- Discovery AI can read/write specifications only
+- Review AI has read-only access (cannot modify any files)
+
+**Tool Restrictions:**
+- **No shell/bash access** - Neither AI can execute system commands
+- **No arbitrary code execution** - AIs cannot run scripts or programs
+- **Limited to safe operations**: File reading, web searches, and documentation lookups
+- Discovery AI cannot spawn sub-agents (no Task tool)
+- Review AI cannot modify files (no Write/Edit tools)
+
+**What Each AI Can Do:**
+- Discovery AI: Read/write specs, search web, fetch documentation
+- Review AI: Read specs only, analyze code, spawn analysis sub-agents
+
+This sandboxing is enforced through Claude Code's permission system (`.claude/settings.json` in each workspace), ensuring the AIs can help you create specifications without any risk to your system or other files. You can verify these restrictions yourself in the `backend/workspaces/` directory.
+
 **Q: How can I contribute to SpecDrafter?**
 
 **A:** We welcome contributions in many ways:
