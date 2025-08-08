@@ -32,18 +32,15 @@ Building software without clear specifications is like constructing a house with
 | **Discovery AI** 🔵 | • Talks to humans naturally<br>• Challenges assumptions<br>• Anti-over-engineering built-in | Gets to what users ACTUALLY need, not what they think they want |
 | **Review AI** 🔴 | • Technical reality checks<br>• Feasibility analysis<br>• Architecture validation | Catches problems before you write code |
 
-**The Magic:** Watch them collaborate in real-time - Discovery drafts, Review validates, together they refine until you have a specification that's both user-focused AND technically sound.
 
 
-### 🎉 The Result
 
-> **Transform vague ideas into implementation-ready specifications in minutes, not days. One click generates a complete technical spec with built-in feasibility validation.**
-
-
-<img width="1624" height="1056" alt="Screenshot 2025-08-03 at 20 19 12" src="https://github.com/user-attachments/assets/fd578ac6-3b8b-47c5-951e-241729ccb1a6" />
+<img width="3024" height="1890" alt="Screenshot 2025-08-08 at 21 34 16" src="https://github.com/user-attachments/assets/4660965b-df59-40b4-8a87-ea474822c244" />
 
 
-<img width="1624" height="1056" alt="Screenshot 2025-08-03 at 20 13 16" src="https://github.com/user-attachments/assets/2671d7fd-772d-488e-a4d3-235ab508588e" />
+
+<img width="3024" height="1890" alt="Screenshot 2025-08-08 at 21 06 15" src="https://github.com/user-attachments/assets/7d14a209-bfa7-4029-ad6f-f9669c9853d0" />
+
 
 
 ## Quick Start
@@ -130,6 +127,11 @@ The application will open at:
       │  spec.md     │
       └──────────────┘
 ```
+
+
+
+<img width="3024" height="1890" alt="Screenshot 2025-08-08 at 21 33 12" src="https://github.com/user-attachments/assets/d6d56a5b-ed18-4884-a1e7-e61c3c2dfc50" />
+
 
 
 ### Customizing AI Behavior
