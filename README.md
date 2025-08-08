@@ -159,13 +159,19 @@ DEBUG=true
 
 ## Best Practices
 
-1. **Let Discovery AI Lead**: Don't jump straight to technical details
-2. **Trust the Process**: The anti-over-engineering principle works
-3. **Watch the Collaboration**: Understanding AI reasoning helps you make better decisions
-4. **Iterate**: Use the Review AI's feedback to refine requirements
-5. **Export Early**: Download specs as markdown for version control
+1. **Don't Use Claude Code While Using SpecDrafter**: Avoid using Claude Code simultaneously as this can lead to context mixing
+2. **Use Opus 4.1 Model**: Opus 4.1 is recommended as it follows instructions best
+3. **Let Discovery AI Lead**: Don't jump straight to technical details
+4. **Trust the Process**: The anti-over-engineering principle works
+5. **Watch the Collaboration**: Understanding AI reasoning helps you make better decisions
+6. **Iterate**: Use the Review AI's feedback to refine requirements
+7. **Export Early**: Download specs as markdown for version control
 
 ## FAQ
+
+**Q: Can I use SpecDrafter without Claude Code installed?**
+
+**A:** No. SpecDrafter is built with the Claude Code SDK which requires a locally installed Claude Code CLI. You must have Claude Code installed (`npm install -g @anthropic-ai/claude-code`) and connected to your Anthropic account with valid API credentials. The entire dual-AI architecture depends on the Claude Code SDK for managing the AI instances.
 
 **Q: How is this different from just using Claude or ChatGPT?**
 
