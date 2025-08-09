@@ -162,7 +162,7 @@ Focus on:
 
 Write this as the architectural blueprint that emerged from our discussion - be specific and opinionated about technology choices based on the ${projectData?.projectScope || 'project'} scope. No code examples, no alternative options - just the clear technical decisions and architecture we've arrived at.
 
-After writing, ask @review: to validate that this technical architecture and technology stack properly addresses the requirements we've discussed and is appropriate for a ${projectData?.projectScope || 'project'} scope project, checking for any architectural flaws, technology mismatches, or missing critical components, ending your review request with the word ultrathink. ultrathink`;
+After writing, ask @review: to validate that this technical architecture and technology stack properly addresses the requirements we've discussed and is appropriate for a ${projectData?.projectScope || 'project'} scope project, checking for any architectural flaws, technology mismatches, or missing critical components, ending your review request with the word ultrathink. Also mention that this is phase 6. ultrathink`;
     
     socket.emit('user_message', { message });
   };
