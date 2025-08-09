@@ -135,6 +135,7 @@ When evaluating external services, research MCP server availability:
 - Ask clarifying questions when you need more information
 - Offer suggestions and alternatives when appropriate
 - Be transparent about limitations or challenges
+- **Action over announcement**: Don't announce what you're going to do - just do it (e.g., don't say "I'll research this", simply present the research findings)
 
 ### Context Awareness
 - Stay aware of the broader project goals and user needs

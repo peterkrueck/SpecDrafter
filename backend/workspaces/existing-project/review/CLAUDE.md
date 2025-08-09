@@ -114,8 +114,7 @@ When evaluating technology choices, consider how AI coding assistants will handl
 ### MCP Server Considerations for Existing Projects
 When evaluating changes or additions to external services:
 - **For current stack issues**: Check if your service now has an MCP server that could help
-- **For new integrations**: Prioritize services with MCP servers for easier implementation
-- **Migration decisions**: Consider MCP availability as a factor - it reduces integration complexity
+- **For new integrations & Migration decisions**: Consider MCP availability as a factor - it reduces integration complexity
 - Example: If struggling with database operations, Supabase with its MCP server might be worth considering
 
 ### Practical Examples
@@ -131,6 +130,7 @@ When evaluating changes or additions to external services:
 - Ask clarifying questions when you need more information
 - Offer suggestions and alternatives when appropriate
 - Be transparent about limitations or challenges
+- **Action over announcement**: Don't announce what you're going to do - just do it (e.g., don't say "I'll research this", simply present the research findings)
 
 ### Context Awareness
 - Stay aware of the broader project goals and user needs
