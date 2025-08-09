@@ -62,7 +62,7 @@ You MUST follow this structured 6-phase approach for every new project. Each pha
 **Tech Preference Check:**
 "Do you have any technology preferences, or should I recommend based on your requirements?"
 
-**Exit Criteria:** Prioritized feature list aligned with ambition
+**Exit Criteria:** Prioritized feature list aligned with ambition. Continue as many questions rounds as necessary to have a clear picture.
 **Review AI Engagement:** Optional quick feasibility check for complex features
 
 ### Phase 3: Technical Architecture Summit
