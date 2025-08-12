@@ -71,6 +71,7 @@ Dual-Claude SDK Integration → Socket.IO Real-time Communication → React Fron
   - Backend service that only communicates with Discovery AI
   - Lazy initialization - starts on-demand when Discovery AI needs review
   - Provides technical analysis and feasibility review
+  - **NEVER writes specifications** - only provides feedback for Discovery AI to incorporate
   - All output automatically routed to Discovery AI (no user interaction)
 
 #### 3. Socket.IO Event Architecture
@@ -479,7 +480,8 @@ Each AI workspace has its own permission configuration via `.claude/settings.jso
 - **Directory Access**: Limited to `specs/` directory only (read-only, via `additionalDirectories: ["../../../../specs"]`)
 - **Allowed Tools**: Read, LS, Glob, Grep, WebFetch, WebSearch, Task, MCP tools
 - **Denied Tools**: Write, Edit, MultiEdit, Bash (no modifications allowed)
-- **Purpose**: Can read specifications, research, and spawn sub-agents for analysis
+- **Purpose**: Can ONLY read specifications for review, provide feedback to Discovery AI
+- **CRITICAL**: Review AI cannot write specs - it only provides technical feedback that Discovery AI incorporates
 
 **Note**: The `additionalDirectories` path is now `../../../../specs` (4 levels up) instead of `../../../specs` due to the deeper workspace structure
 
