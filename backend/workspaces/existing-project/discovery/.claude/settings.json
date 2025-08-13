@@ -4,6 +4,8 @@
     "allow": [
       "Read",
       "Write",
+      "Edit",
+      "MultiEdit",
       "LS",
       "Glob",
       "Grep",
