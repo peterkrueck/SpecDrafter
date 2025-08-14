@@ -157,6 +157,18 @@ function App() {
       setCurrentView('spec');
     });
 
+    socket.on('initial_spec_loaded', (data) => {
+      console.log('📄 Initial spec loaded for existing project:', data.filePath);
+      setSpecContent({
+        html: data.html,
+        raw: data.raw,
+        filePath: data.filePath,
+        fileName: data.fileName
+      });
+      // Set Spec View as default for existing projects
+      setCurrentView('spec');
+    });
+
     socket.on('spec_file_generated', (data) => {
       setSpecContent({
         html: data.html,
@@ -219,6 +231,7 @@ function App() {
       socket.off('ai_collaboration_tools_complete');
       socket.off('ai_collaboration_typing');
       socket.off('spec_writing_started');
+      socket.off('initial_spec_loaded');
       socket.off('spec_file_generated');
       socket.off('spec_file_updated');
       socket.off('available_models');

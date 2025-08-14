@@ -196,6 +196,35 @@ io.on('connection', (socket) => {
         return;
       }
       
+      // Read and process the existing spec file for immediate display
+      const specContent = fs.readFileSync(specPath, 'utf-8');
+      const { marked } = await import('marked');
+      
+      // Configure marked for consistent HTML output
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+        sanitize: false,
+        smartLists: true,
+        smartypants: false
+      });
+      
+      const html = marked.parse(specContent);
+      
+      // Emit the initial spec content to frontend
+      socket.emit('initial_spec_loaded', {
+        filePath: path.relative(projectRoot, specPath),
+        fileName: `${projectName}/spec`,
+        html,
+        raw: specContent
+      });
+      
+      logger.info('📄 Initial spec content sent to frontend', { 
+        projectName,
+        specPath,
+        contentLength: specContent.length 
+      });
+      
       // Create or update orchestrator with model and 'existing' project mode
       if (data.modelId) {
         const modelConfig = getModelById(data.modelId);

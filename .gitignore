@@ -70,3 +70,4 @@ backend/workspaces/*/.claude/settings.local.json
 # Project documentation (excluded as requested)
 REDDIT_POST.md
 SPECDRAFTER_WEB_SERVICE_POC.md
+SPECDRAFTER_LANGGRAPH_ARCHITECTURE.md
