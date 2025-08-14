@@ -215,19 +215,31 @@ I want to create this project. Please help me draft comprehensive specifications
       }
     } else if (mode === 'existing') {
       if (validateForm()) {
-        // Start with existing spec
+        // Start with existing spec - first load it for display
         socket.emit('start_with_existing_spec', {
           projectName: selectedSpec.projectName,
           modelId: formData.modelId,
           skillLevel: formData.skillLevel
         });
         
-        // Call onStart without initial message
+        // Create initial message for existing projects (mirror new project behavior)
+        const skillLevelText = skillLevels.find(s => s.id === formData.skillLevel)?.label || formData.skillLevel;
+        
+        const initialMessage = `I'm continuing work on project "${selectedSpec.projectName}".
+
+Technical Background: ${skillLevelText}
+${getSkillContext(formData.skillLevel)}
+
+The current specification is located at: specs/${selectedSpec.projectName}/spec.md
+
+Please read this specification file to understand the project and let me know how you'd like to proceed.`;
+        
+        // Call onStart with initial message (just like new projects)
         onStart({
           projectName: selectedSpec.projectName,
           modelId: formData.modelId,
           skillLevel: formData.skillLevel
-        }, null);
+        }, initialMessage);
       }
     }
   };

@@ -184,7 +184,7 @@ io.on('connection', (socket) => {
   // Start with an existing specification
   socket.on('start_with_existing_spec', async (data) => {
     const { projectName, modelId, skillLevel } = data;
-    logger.info('🔄 Starting with existing specification', { projectName, modelId, skillLevel });
+    logger.info('🔄 Loading existing specification for display', { projectName, modelId, skillLevel });
     
     try {
       // Ensure specs directory path is absolute
@@ -211,7 +211,7 @@ io.on('connection', (socket) => {
       
       const html = marked.parse(specContent);
       
-      // Emit the initial spec content to frontend
+      // Emit the initial spec content to frontend for display in Spec View
       socket.emit('initial_spec_loaded', {
         filePath: path.relative(projectRoot, specPath),
         fileName: `${projectName}/spec`,
@@ -219,7 +219,7 @@ io.on('connection', (socket) => {
         raw: specContent
       });
       
-      logger.info('📄 Initial spec content sent to frontend', { 
+      logger.info('📄 Initial spec content sent to frontend for display', { 
         projectName,
         specPath,
         contentLength: specContent.length 
@@ -241,28 +241,9 @@ io.on('connection', (socket) => {
         setupOrchestratorHandlers();
       }
       
-      // Map skill level to user-friendly text
-      const skillLevelText = {
-        'non-tech': 'Non-Tech',
-        'tech-savvy': 'Tech-Savvy',
-        'software-professional': 'Software Professional'
-      }[skillLevel] || skillLevel;
-      
-      // Create context message with absolute path for Discovery AI
-      const contextMessage = `I'm continuing work on project "${projectName}".
-User's Technical Background: ${skillLevelText}
-The current specification is located at: ${specPath}
-Please read this specification file to understand the project. Keep in mind the user's technical background when communicating. Let me know how you'd like to proceed.`;
-      
-      logger.info('📝 Sending context message to Discovery AI', { 
-        projectName, 
-        specPath,
-        skillLevel: skillLevelText,
-        messageLength: contextMessage.length 
-      });
-      
-      // Start processes with the context message
-      await orchestrator.startProcesses(contextMessage);
+      // Note: Discovery AI will be started via the normal start_processes flow
+      // when the frontend sends the initial message (mirroring new project behavior)
+      logger.info('✅ Orchestrator ready, waiting for start_processes from frontend');
       
       // Send project info to frontend
       socket.emit('project_info', { 
@@ -271,8 +252,8 @@ Please read this specification file to understand the project. Keep in mind the 
       });
       
     } catch (error) {
-      logger.error('❌ Error starting with existing spec', { error: error.message });
-      socket.emit('error', { message: 'Failed to start with existing specification' });
+      logger.error('❌ Error loading existing spec', { error: error.message });
+      socket.emit('error', { message: 'Failed to load existing specification' });
     }
   });
 

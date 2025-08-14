@@ -473,6 +473,12 @@ class DualProcessOrchestrator extends EventEmitter {
       const discoveryPrompt = initialMessage || 
         `Hello! I'm ready to help discover requirements for a new project. Please tell me what you'd like to build.`;
       
+      // Emit typing indicator when processing initial message
+      if (initialMessage) {
+        this.emit('typing_indicator', { isTyping: true, speaker: 'Discovery AI' });
+        this.logger.info('💬 Emitted typing indicator for initial message processing');
+      }
+      
       this.logger.info('🤖 Spawning discovery process...', { 
         usingInitialMessage: !!initialMessage 
       });
